@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { customerService, dashboardService, pointsService, productService } from "../services";
-import API_URL, { PUBLIC_APP_URL } from "../config";
+import API_URL from "../config";
 import "./MobileCapture.css";
 
 const emptyCustomerForm = {
@@ -46,8 +45,6 @@ export default function MobileCapture() {
   const [newCustomerForm, setNewCustomerForm] = useState(emptyCustomerForm);
   const [pointsForm, setPointsForm] = useState(emptyPointsForm);
   const [message, setMessage] = useState("");
-  const [registrationLink, setRegistrationLink] = useState("");
-  const [linkLoading, setLinkLoading] = useState(false);
 
   const selectedCustomerBalance = useMemo(
     () => formatPoints(selectedCustomer?.pontos),
@@ -57,6 +54,12 @@ export default function MobileCapture() {
   const showMessage = (text, timeout = 3000) => {
     setMessage(text);
     if (timeout) window.setTimeout(() => setMessage(""), timeout);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+    window.location.href = "/login?next=/captura";
   };
 
   const buscarClientes = async (searchTerm = "") => {
@@ -95,7 +98,7 @@ export default function MobileCapture() {
   const carregarAniversariantes = async () => {
     setListLoading(true);
     try {
-      const response = await dashboardService.aniversariantes(100);
+      const response = await dashboardService.aniversariantesDia(100);
       setAniversariantes(Array.isArray(response.data?.data) ? response.data.data : []);
     } catch (err) {
       console.error("Erro ao carregar aniversariantes", err);
@@ -202,36 +205,6 @@ export default function MobileCapture() {
     }
   };
 
-  const handleGenerateRegistrationLink = async () => {
-    setLinkLoading(true);
-    try {
-      const response = await customerService.createRegistrationLink();
-      const token = response.data?.data?.token;
-      if (!token) throw new Error("Token ausente na resposta da API");
-
-      const appUrl = (PUBLIC_APP_URL || window.location.origin).replace(/\/$/, "");
-      setRegistrationLink(`${appUrl}/cadastro-cliente?token=${encodeURIComponent(token)}`);
-    } catch (err) {
-      console.error("Erro ao gerar link", err);
-      showMessage("Nao foi possivel gerar o link de cadastro.");
-    } finally {
-      setLinkLoading(false);
-    }
-  };
-
-  const handleCopyRegistrationLink = async () => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(registrationLink);
-        showMessage("Link copiado. Envie-o ao cliente.", 2500);
-        return;
-      }
-      showMessage("Selecione o link e copie manualmente.", 3500);
-    } catch {
-      showMessage("Nao foi possivel copiar automaticamente.", 3500);
-    }
-  };
-
   const handleSearch = (value) => {
     setSearch(value);
     buscarClientes(value);
@@ -240,8 +213,13 @@ export default function MobileCapture() {
   return (
     <div className="mobile-capture">
       <div className="capture-header">
-        <h1>Operacao no Celular</h1>
-        <p>Clientes, pontos, premios e aniversariantes</p>
+        <div>
+          <h1>Operacao no Celular</h1>
+          <p>Clientes, pontos, premios e aniversariantes de hoje</p>
+        </div>
+        <button type="button" className="mobile-logout" onClick={handleLogout}>
+          Sair
+        </button>
       </div>
 
       {message && <div className="message">{message}</div>}
@@ -278,91 +256,55 @@ export default function MobileCapture() {
       </div>
 
       {mode === "clientes" && (
-        <>
-          <form onSubmit={handleCreateCustomer} className="capture-form">
-            <h2>Capturar Cliente</h2>
+        <form onSubmit={handleCreateCustomer} className="capture-form">
+          <h2>Cadastrar Cliente</h2>
 
-            <input
-              type="text"
-              placeholder="Nome completo"
-              value={newCustomerForm.nome}
-              onChange={(event) =>
-                setNewCustomerForm({ ...newCustomerForm, nome: event.target.value })
-              }
-              required
-              autoFocus
-            />
+          <input
+            type="text"
+            placeholder="Nome completo"
+            value={newCustomerForm.nome}
+            onChange={(event) =>
+              setNewCustomerForm({ ...newCustomerForm, nome: event.target.value })
+            }
+            required
+            autoFocus
+          />
 
-            <input
-              type="tel"
-              placeholder="Telefone"
-              value={newCustomerForm.telefone}
-              onChange={(event) =>
-                setNewCustomerForm({ ...newCustomerForm, telefone: event.target.value })
-              }
-              inputMode="tel"
-            />
+          <input
+            type="tel"
+            placeholder="Telefone"
+            value={newCustomerForm.telefone}
+            onChange={(event) =>
+              setNewCustomerForm({ ...newCustomerForm, telefone: event.target.value })
+            }
+            inputMode="tel"
+          />
 
-            <input
-              type="email"
-              placeholder="Email"
-              value={newCustomerForm.email}
-              onChange={(event) =>
-                setNewCustomerForm({ ...newCustomerForm, email: event.target.value })
-              }
-              inputMode="email"
-            />
+          <input
+            type="email"
+            placeholder="Email"
+            value={newCustomerForm.email}
+            onChange={(event) =>
+              setNewCustomerForm({ ...newCustomerForm, email: event.target.value })
+            }
+            inputMode="email"
+          />
 
-            <input
-              type="date"
-              value={newCustomerForm.data_nascimento}
-              onChange={(event) =>
-                setNewCustomerForm({
-                  ...newCustomerForm,
-                  data_nascimento: event.target.value,
-                })
-              }
-            />
+          <input
+            type="date"
+            value={newCustomerForm.data_nascimento}
+            onChange={(event) =>
+              setNewCustomerForm({
+                ...newCustomerForm,
+                data_nascimento: event.target.value,
+              })
+            }
+          />
 
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? "Salvando..." : "Salvar Cliente"}
-            </button>
-          </form>
-
-          <section className="registration-link-card">
-            <div className="registration-link-copy">
-              <span className="registration-link-eyebrow">CADASTRO PELO CLIENTE</span>
-              <h2>Gerar link ou QR Code</h2>
-              <p>Envie o link para o cliente preencher o cadastro no proprio celular.</p>
-              <button
-                type="button"
-                className="btn-secondary generate-link-button"
-                onClick={handleGenerateRegistrationLink}
-                disabled={linkLoading}
-              >
-                {linkLoading ? "Gerando..." : "Gerar link e QR Code"}
-              </button>
-            </div>
-
-            {registrationLink && (
-              <div className="registration-link-result">
-                <QRCodeSVG value={registrationLink} size={156} level="M" includeMargin />
-                <div className="registration-link-actions">
-                  <input
-                    value={registrationLink}
-                    readOnly
-                    aria-label="Link de cadastro do cliente"
-                    onFocus={(event) => event.target.select()}
-                  />
-                  <button type="button" className="btn-primary" onClick={handleCopyRegistrationLink}>
-                    Copiar link
-                  </button>
-                  <small>O link expira em 30 dias.</small>
-                </div>
-              </div>
-            )}
-          </section>
-        </>
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "Salvando..." : "Salvar Cliente"}
+          </button>
+        </form>
       )}
 
       {mode === "pontos" && (
@@ -506,7 +448,7 @@ export default function MobileCapture() {
       {mode === "aniversarios" && (
         <div className="points-section">
           <div className="section-heading-row">
-            <h2>Aniversariantes</h2>
+            <h2>Aniversariantes de Hoje</h2>
             <button type="button" className="btn-secondary compact-button" onClick={carregarAniversariantes}>
               Atualizar
             </button>
@@ -515,7 +457,7 @@ export default function MobileCapture() {
           {listLoading ? (
             <p className="empty">Carregando...</p>
           ) : aniversariantes.length === 0 ? (
-            <p className="empty">Nenhum aniversariante encontrado</p>
+            <p className="empty">Nenhum aniversariante hoje</p>
           ) : (
             <div className="mobile-card-list">
               {aniversariantes.map((cliente) => (

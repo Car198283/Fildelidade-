@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { authService } from "../services";
 import "./Auth.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -31,7 +32,8 @@ export default function Login() {
       localStorage.setItem("accessToken", response.data.data.access_token);
       localStorage.setItem("user", JSON.stringify(response.data.data));
 
-      navigate("/dashboard");
+      const nextPath = searchParams.get("next");
+      navigate(nextPath?.startsWith("/") ? nextPath : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "Email ou senha incorretos");
     } finally {

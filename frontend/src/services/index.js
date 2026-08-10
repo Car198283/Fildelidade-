@@ -112,6 +112,9 @@ export const dashboardService = {
   aniversariantes: (limit = 50, mes = null) =>
     api.get("/dashboard/aniversariantes", { params: { limit, mes } }),
 
+  aniversariantesDia: (limit = 50) =>
+    api.get("/dashboard/aniversariantes-dia", { params: { limit } }),
+
   clientesQuasePremiados: (
     limit = 50,
     percentualMin = 80,

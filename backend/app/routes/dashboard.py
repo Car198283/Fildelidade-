@@ -109,6 +109,22 @@ def obter_aniversariantes(
         "data": clientes
     }
 
+@router.get("/aniversariantes-dia")
+def obter_aniversariantes_dia(
+    limit: int = Query(50, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Obtem clientes aniversariantes do dia."""
+
+    clientes = DashboardService.get_aniversariantes_dia(db, current_user.company_id, limit)
+
+    return {
+        "success": True,
+        "total": len(clientes),
+        "data": clientes
+    }
+
 @router.get("/clientes-premiados")
 def obter_clientes_premiados(
     percentual_minimo: float = Query(80, ge=0, le=100),

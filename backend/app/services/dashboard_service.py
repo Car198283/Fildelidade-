@@ -171,12 +171,53 @@ class DashboardService:
         if mes is None:
             mes = datetime.now().month
 
+        if settings.db_type.lower() == "postgresql":
+            month_filter = extract("month", Customer.data_nascimento) == mes
+            day_order = extract("day", Customer.data_nascimento)
+        else:
+            month_filter = cast(func.strftime("%m", Customer.data_nascimento), Integer) == mes
+            day_order = cast(func.strftime("%d", Customer.data_nascimento), Integer)
+
         aniversariantes = db.query(Customer).filter(
             Customer.company_id == company_id,
             Customer.ativo == True,
-            cast(func.strftime("%m", Customer.data_nascimento), Integer) == mes,
+            month_filter,
             Customer.data_nascimento != None
-        ).order_by(cast(func.strftime("%d", Customer.data_nascimento), Integer)).limit(limit).all()
+        ).order_by(day_order).limit(limit).all()
+
+        return [
+            {
+                "id": c.id,
+                "nome": c.nome,
+                "telefone": c.telefone,
+                "email": c.email,
+                "data_nascimento": str(c.data_nascimento),
+                "pontos": c.pontos,
+                "idade": datetime.now().year - c.data_nascimento.year if c.data_nascimento else None
+            }
+            for c in aniversariantes
+        ]
+
+    @staticmethod
+    def get_aniversariantes_dia(db: Session, company_id: int, limit: int = 50) -> list:
+        """Retorna clientes aniversariantes de hoje."""
+
+        hoje = datetime.now()
+
+        if settings.db_type.lower() == "postgresql":
+            month_filter = extract("month", Customer.data_nascimento) == hoje.month
+            day_filter = extract("day", Customer.data_nascimento) == hoje.day
+        else:
+            month_filter = cast(func.strftime("%m", Customer.data_nascimento), Integer) == hoje.month
+            day_filter = cast(func.strftime("%d", Customer.data_nascimento), Integer) == hoje.day
+
+        aniversariantes = db.query(Customer).filter(
+            Customer.company_id == company_id,
+            Customer.ativo == True,
+            month_filter,
+            day_filter,
+            Customer.data_nascimento != None
+        ).order_by(Customer.nome.asc()).limit(limit).all()
 
         return [
             {

@@ -8,6 +8,10 @@
 }
 
 .capture-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   max-width: 1040px;
   margin: 0 auto 20px;
   padding: 24px 28px;
@@ -15,6 +19,22 @@
   color: #fff;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22);
+}
+
+.mobile-logout {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mobile-logout:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .capture-header h1 {
@@ -283,7 +303,8 @@
 
 @media (max-width: 640px) {
   .mobile-capture { padding: 16px; }
-  .capture-header { padding: 20px; border-radius: 13px; }
+  .capture-header { align-items: flex-start; flex-direction: column; padding: 20px; border-radius: 13px; }
+  .mobile-logout { width: 100%; }
   .capture-form, .points-section { padding: 20px; border-radius: 13px; }
   .capture-form { grid-template-columns: 1fr; gap: 12px; }
   .capture-form > input:first-of-type, .capture-form > button, .points-form .selected-customer, .points-form .input-group { grid-column: auto; }

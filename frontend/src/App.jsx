@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { useState } from "react";
 
@@ -33,7 +34,8 @@ function getStoredUser() {
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("accessToken");
-  return token ? children : <Navigate to="/login" />;
+  const location = useLocation();
+  return token ? children : <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />;
 }
 
 function ProtectedLayout({ children }) {
@@ -138,9 +140,7 @@ export default function App() {
           path="/captura"
           element={
             <PrivateRoute>
-              <ProtectedLayout>
-                <MobileCapture />
-              </ProtectedLayout>
+              <MobileCapture />
             </PrivateRoute>
           }
         />
