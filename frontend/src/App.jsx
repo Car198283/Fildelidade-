@@ -66,7 +66,7 @@ function ProtectedLayout({ children }) {
             <a href="/customers">👥 Clientes</a>
             <a href="/products">📦 Produtos</a>
             <a href="/promotion-config">⚙️ Promoção</a>
-            <a href="/capture" className="capture-link">
+            <a href="/captura" className="capture-link">
               📱 Captura
             </a>
             <span className="user-email">{user.email}</span>
@@ -135,7 +135,7 @@ export default function App() {
         />
 
         <Route
-          path="/capture"
+          path="/captura"
           element={
             <PrivateRoute>
               <ProtectedLayout>
@@ -156,7 +156,9 @@ export default function App() {
           }
         />
 
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/capture" element={<Navigate to="/captura" />} />
+
+        <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );
