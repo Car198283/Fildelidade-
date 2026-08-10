@@ -1,0 +1,433 @@
+/* ============================================
+   Paleta de Cores - Fidelidade Total
+   Baseada em: Windows 11 Design System
+   ============================================ */
+
+:root {
+  /* CORES PRIMÁRIAS - Azul Windows */
+  --color-primary: #0078d4; /* Azul padrão Windows */
+  --color-primary-hover: #106ebe; /* Azul escuro hover */
+  --color-primary-active: #004d8c; /* Azul muito escuro ativo */
+  --color-primary-light: #81d4fa; /* Azul claro */
+
+  /* CORES SECUNDÁRIAS */
+  --color-secondary: #50e6ff; /* Ciano claro */
+  --color-secondary-dark: #0079b8; /* Azul escuro */
+
+  /* CORES DE SUCESSO - Verde Windows */
+  --color-success: #107c10; /* Verde Windows */
+  --color-success-hover: #0e7d08;
+  --color-success-light: #92d050; /* Verde claro */
+  --color-success-bg: #e2f9e8; /* Fundo verde */
+
+  /* CORES DE AVISO - Amarelo/Laranja Windows */
+  --color-warning: #ffb400; /* Amarelo/Laranja */
+  --color-warning-hover: #e8a900;
+  --color-warning-light: #fff4ce; /* Fundo amarelo claro */
+  --color-warning-bg: #fff4ce;
+
+  /* CORES DE ERRO - Vermelho Windows */
+  --color-error: #e74c3c; /* Vermelho */
+  --color-error-hover: #c0392b;
+  --color-error-light: #fadbe3; /* Fundo rosa claro */
+  --color-error-bg: #fadbe3;
+
+  /* CORES DE INFORMAÇÃO - Roxo Windows */
+  --color-info: #7e57c2; /* Roxo */
+  --color-info-hover: #6c4ca6;
+  --color-info-light: #e8daef; /* Fundo roxo claro */
+  --color-info-bg: #e8daef;
+
+  /* CORES NEUTRAS - Cinzas Windows */
+  --color-gray-50: #f7f7f7; /* Cinza muito claro */
+  --color-gray-100: #f3f3f3; /* Cinza claro */
+  --color-gray-200: #ededed; /* Cinza claro-médio */
+  --color-gray-300: #e0e0e0; /* Cinza médio */
+  --color-gray-400: #c8c8c8; /* Cinza médio-escuro */
+  --color-gray-500: #808080; /* Cinza escuro */
+  --color-gray-600: #616161; /* Cinza muito escuro */
+  --color-gray-700: #4d4d4d; /* Cinza escuríssimo */
+  --color-gray-800: #3d3d3d; /* Cinza quase preto */
+  --color-gray-900: #2d2d2d; /* Cinza preto */
+
+  /* CORES DE TEXTO */
+  --text-color-primary: #2d2d2d; /* Texto principal */
+  --text-color-secondary: #616161; /* Texto secundário */
+  --text-color-disabled: #c8c8c8; /* Texto desabilitado */
+  --text-color-white: #ffffff; /* Texto branco */
+
+  /* CORES DE FUNDO */
+  --bg-color-primary: #ffffff; /* Fundo principal */
+  --bg-color-secondary: #f7f7f7; /* Fundo secundário */
+  --bg-color-tertiary: #ededed; /* Fundo terciário */
+
+  /* CORES ESPECIAIS */
+  --color-link: #0078d4; /* Link cor */
+  --color-link-visited: #6c6bb8; /* Link visitado */
+  --color-border: #e0e0e0; /* Borda padrão */
+  --color-shadow: rgba(0, 0, 0, 0.15); /* Sombra */
+
+  /* TIPOGRAFIA */
+  --font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+
+  /* SPACING */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* BORDER RADIUS */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* SHADOWS */
+  --shadow-sm: 0 1px 3px var(--color-shadow);
+  --shadow-md: 0 4px 8px var(--color-shadow);
+  --shadow-lg: 0 8px 16px var(--color-shadow);
+  --shadow-xl: 0 16px 32px var(--color-shadow);
+
+  /* Z-INDEX */
+  --z-dropdown: 1000;
+  --z-fixed: 1020;
+  --z-modal: 1030;
+  --z-popover: 1040;
+  --z-tooltip: 1050;
+}
+
+/* ============================================
+   COMPONENTES USANDO A PALETA
+   ============================================ */
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-color-primary);
+  background-color: var(--bg-color-primary);
+}
+
+/* BOTÕES */
+.btn {
+  font-family: var(--font-family);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--text-color-white);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  background-color: var(--color-primary-active);
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: var(--text-color-white);
+}
+
+.btn-success:hover {
+  background-color: var(--color-success-hover);
+}
+
+.btn-warning {
+  background-color: var(--color-warning);
+  color: var(--text-color-primary);
+}
+
+.btn-warning:hover {
+  background-color: var(--color-warning-hover);
+}
+
+.btn-error {
+  background-color: var(--color-error);
+  color: var(--text-color-white);
+}
+
+.btn-error:hover {
+  background-color: var(--color-error-hover);
+}
+
+.btn-secondary {
+  background-color: var(--color-gray-200);
+  color: var(--text-color-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-gray-300);
+}
+
+/* CARDS */
+.card {
+  background-color: var(--bg-color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+/* INPUTS */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+}
+
+/* ALERTAS */
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.alert-success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border-left: 4px solid var(--color-success);
+}
+
+.alert-warning {
+  background-color: var(--color-warning-bg);
+  color: #856404;
+  border-left: 4px solid var(--color-warning);
+}
+
+.alert-error {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-left: 4px solid var(--color-error);
+}
+
+.alert-info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border-left: 4px solid var(--color-info);
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.tab {
+  padding: var(--spacing-md);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--color-primary);
+}
+
+.tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.badge-primary {
+  background-color: var(--color-primary);
+  color: var(--text-color-white);
+}
+
+.badge-success {
+  background-color: var(--color-success);
+  color: var(--text-color-white);
+}
+
+.badge-warning {
+  background-color: var(--color-warning);
+  color: var(--text-color-primary);
+}
+
+.badge-error {
+  background-color: var(--color-error);
+  color: var(--text-color-white);
+}
+
+/* NAVBAR */
+.navbar {
+  background-color: var(--color-primary);
+  color: var(--text-color-white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.navbar a {
+  color: var(--text-color-white);
+  text-decoration: none;
+}
+
+.navbar a:hover {
+  color: var(--color-gray-100);
+}
+
+/* TABLES */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+thead {
+  background-color: var(--color-primary);
+  color: var(--text-color-white);
+}
+
+tbody tr:hover {
+  background-color: var(--color-gray-50);
+}
+
+td,
+th {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* SPINNERS/LOADERS */
+.spinner {
+  border: 3px solid var(--color-gray-200);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* LINKS */
+a {
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+a:visited {
+  color: var(--color-link-visited);
+}
+
+/* MODAIS */
+.modal {
+  background-color: var(--bg-color-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-modal);
+}
+
+.modal-header {
+  background-color: var(--color-primary);
+  color: var(--text-color-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.modal-body {
+  padding: var(--spacing-lg);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-lg);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+/* UTIL - Desabilitado */
+:disabled,
+[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  color: var(--text-color-disabled);
+}
+
+/* UTIL - Texto pequeno */
+.text-sm {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-secondary);
+}
+
+.text-muted {
+  color: var(--text-color-secondary);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.text-error {
+  color: var(--color-error);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-info {
+  color: var(--color-info);
+}

@@ -1,0 +1,140 @@
+/* Customer Details */
+
+.customer-details {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 30px 0;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.header h1 {
+  color: #333;
+  font-size: 28px;
+  margin: 0;
+}
+
+.points-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.points-display .label {
+  color: #666;
+  font-size: 14px;
+}
+
+.points-display .points {
+  font-size: 32px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.info-card,
+.points-card,
+.history-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.info-card h3,
+.points-card h3,
+.history-card h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.info-card p {
+  color: #666;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.info-card strong {
+  color: #333;
+}
+
+.points-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.points-form input,
+.points-form select {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.points-form input:focus,
+.points-form select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.empty {
+  color: #999;
+  text-align: center;
+  padding: 20px;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transactions-table th {
+  background: #f5f5f5;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #666;
+  border-bottom: 2px solid #eee;
+  font-size: 13px;
+}
+
+.transactions-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.transactions-table tr:hover {
+  background: #fafafa;
+}
+
+.tipo {
+  font-weight: 600;
+  color: #666;
+}
+
+.points.entrada {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.points.saida {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+.error {
+  color: #e74c3c;
+  text-align: center;
+  padding: 40px;
+}
