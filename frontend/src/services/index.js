@@ -14,6 +14,19 @@ export const authService = {
     api.post("/auth/login", { email, senha: password }),
 };
 
+export const adminService = {
+  me: () => api.get("/admin/me"),
+
+  companies: () => api.get("/admin/companies"),
+
+  users: (companyId = null) =>
+    api.get("/admin/users", { params: { company_id: companyId } }),
+
+  createUser: (data) => api.post("/admin/users", data),
+
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+};
+
 // ========== CUSTOMERS ==========
 
 export const customerService = {

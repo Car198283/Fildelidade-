@@ -131,5 +131,6 @@ class AuthService:
             "token_type": "bearer",
             "user_id": user.id,
             "company_id": user.company_id,
-            "email": user.email
+            "email": user.email,
+            "role": user.role
         }

@@ -28,6 +28,17 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     senha: str = Field(..., min_length=6, max_length=72)
 
+class ManagedUserCreate(BaseModel):
+    email: EmailStr
+    senha: str = Field(..., min_length=6, max_length=72)
+    role: str = Field("observador", pattern="^(admin|observador)$")
+    company_id: Optional[int] = None
+
+class ManagedUserUpdate(BaseModel):
+    role: Optional[str] = Field(None, pattern="^(admin|observador)$")
+    ativo: Optional[bool] = None
+    senha: Optional[str] = Field(None, min_length=6, max_length=72)
+
 class UserLogin(BaseModel):
     email: EmailStr
     senha: str

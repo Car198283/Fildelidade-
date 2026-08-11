@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.schemas import PointsTransactionCreate
 from app.services.points_service import PointsService
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, get_effective_company_id
 
 router = APIRouter(prefix="/clientes", tags=["Points"])
 
@@ -13,7 +13,8 @@ def movimentar_pontos(
     customer_id: int,
     body: PointsTransactionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """
     Movimenta pontos do cliente (entrada ou saida)
@@ -25,7 +26,7 @@ def movimentar_pontos(
         transaction, customer = PointsService.movimentar_pontos(
             db=db,
             customer_id=customer_id,
-            company_id=current_user.company_id,
+            company_id=company_id,
             pontos=body.pontos,
             tipo=body.tipo,
             descricao=body.descricao,
@@ -68,14 +69,15 @@ def obter_historico_pontos(
     page: int = 1,
     limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Obtém histórico de transações do cliente"""
     
     transactions, total = PointsService.get_customer_transactions(
         db=db,
         customer_id=customer_id,
-        company_id=current_user.company_id,
+        company_id=company_id,
         page=page,
         limit=limit
     )

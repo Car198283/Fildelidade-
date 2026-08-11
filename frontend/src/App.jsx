@@ -1,13 +1,12 @@
 import {
   BrowserRouter as Router,
-  Routes,
-  Route,
   Navigate,
+  Route,
+  Routes,
   useLocation,
 } from "react-router-dom";
 import { useState } from "react";
 
-// Pages
 import Register from "./pages/Register";
 import CustomerRegistration from "./pages/CustomerRegistration";
 import Login from "./pages/Login";
@@ -17,6 +16,7 @@ import CustomerDetails from "./pages/CustomerDetails";
 import Products from "./pages/Products";
 import MobileCapture from "./pages/MobileCapture";
 import PromotionConfig from "./pages/PromotionConfig";
+import UserManagement from "./pages/UserManagement";
 
 import "./App.css";
 
@@ -32,19 +32,31 @@ function getStoredUser() {
   }
 }
 
-function PrivateRoute({ children }) {
+function PrivateRoute({ children, roles = [] }) {
   const token = localStorage.getItem("accessToken");
   const location = useLocation();
-  return token ? children : <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />;
+  const user = getStoredUser();
+
+  if (!token) {
+    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />;
+  }
+
+  if (roles.length && !roles.includes(user.role)) {
+    return <Navigate to={user.role === "observador" ? "/captura" : "/dashboard"} />;
+  }
+
+  return children;
 }
 
 function ProtectedLayout({ children }) {
   const [showMenu, setShowMenu] = useState(false);
   const user = getStoredUser();
+  const canManage = user.role === "admin" || user.role === "master";
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("selectedCompanyId");
     window.location.href = "/login";
   };
 
@@ -53,27 +65,29 @@ function ProtectedLayout({ children }) {
       <nav className="navbar">
         <div className="navbar-content">
           <div className="navbar-brand">
-            <h1>🎯 Fidelidade Total</h1>
+            <h1>Fidelidade Total</h1>
           </div>
 
           <button
             className="menu-toggle"
             onClick={() => setShowMenu(!showMenu)}
+            type="button"
           >
-            ☰
+            Menu
           </button>
 
           <div className={`nav-links ${showMenu ? "open" : ""}`}>
-            <a href="/dashboard">📊 Dashboard</a>
-            <a href="/customers">👥 Clientes</a>
-            <a href="/products">📦 Produtos</a>
-            <a href="/promotion-config">⚙️ Promoção</a>
+            <a href="/dashboard">Dashboard</a>
+            {canManage && <a href="/customers">Clientes</a>}
+            {canManage && <a href="/products">Produtos</a>}
+            {canManage && <a href="/promotion-config">Promocao</a>}
+            {canManage && <a href="/usuarios">Usuarios</a>}
             <a href="/captura" className="capture-link">
-              📱 Captura
+              Captura
             </a>
             <span className="user-email">{user.email}</span>
-            <button onClick={handleLogout} className="logout-btn">
-              🚪 Sair
+            <button onClick={handleLogout} className="logout-btn" type="button">
+              Sair
             </button>
           </div>
         </div>
@@ -106,7 +120,7 @@ export default function App() {
         <Route
           path="/customers"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["admin", "master"]}>
               <ProtectedLayout>
                 <Customers />
               </ProtectedLayout>
@@ -117,7 +131,7 @@ export default function App() {
         <Route
           path="/customer/:id"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["admin", "master"]}>
               <ProtectedLayout>
                 <CustomerDetails />
               </ProtectedLayout>
@@ -128,7 +142,7 @@ export default function App() {
         <Route
           path="/products"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["admin", "master"]}>
               <ProtectedLayout>
                 <Products />
               </ProtectedLayout>
@@ -148,7 +162,7 @@ export default function App() {
         <Route
           path="/promotion-config"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["admin", "master"]}>
               <ProtectedLayout>
                 <PromotionConfig />
               </ProtectedLayout>
@@ -156,8 +170,18 @@ export default function App() {
           }
         />
 
-        <Route path="/capture" element={<Navigate to="/captura" />} />
+        <Route
+          path="/usuarios"
+          element={
+            <PrivateRoute roles={["admin", "master"]}>
+              <ProtectedLayout>
+                <UserManagement />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
 
+        <Route path="/capture" element={<Navigate to="/captura" />} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>

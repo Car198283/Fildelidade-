@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import User, Product
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductResponse
 from app.services.product_service import ProductImportService
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, get_effective_company_id, require_admin_or_master
 import pandas as pd
 import io
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/produtos", tags=["Products"])
 async def importar_produtos(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_master)
 ):
     """Importa produtos de arquivo Excel"""
     
@@ -99,11 +99,12 @@ def listar_produtos(
     search: str = Query(None),
     categoria_id: int = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Lista produtos com filtros"""
     
-    query = db.query(Product).filter(Product.company_id == current_user.company_id)
+    query = db.query(Product).filter(Product.company_id == company_id)
     
     if search:
         query = query.filter(Product.nome.ilike(f"%{search}%"))
@@ -136,7 +137,8 @@ def listar_produtos(
 def criar_produto(
     body: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Cria novo produto"""
     
@@ -144,7 +146,7 @@ def criar_produto(
         nome=body.nome,
         preco=body.preco,
         categoria_id=body.categoria_id,
-        company_id=current_user.company_id
+        company_id=company_id
     )
     db.add(produto)
     db.commit()
@@ -164,13 +166,14 @@ def criar_produto(
 def obter_produto(
     produto_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Obtém detalhes do produto"""
     
     produto = db.query(Product).filter(
         Product.id == produto_id,
-        Product.company_id == current_user.company_id
+        Product.company_id == company_id
     ).first()
     
     if not produto:
@@ -192,13 +195,14 @@ def atualizar_produto(
     produto_id: int,
     body: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Atualiza produto"""
     
     produto = db.query(Product).filter(
         Product.id == produto_id,
-        Product.company_id == current_user.company_id
+        Product.company_id == company_id
     ).first()
     
     if not produto:
@@ -227,13 +231,14 @@ def atualizar_produto(
 def deletar_produto(
     produto_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Deleta produto"""
     
     produto = db.query(Product).filter(
         Product.id == produto_id,
-        Product.company_id == current_user.company_id
+        Product.company_id == company_id
     ).first()
     
     if not produto:

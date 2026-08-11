@@ -4,7 +4,7 @@ from sqlalchemy import func, text
 from app.database import get_db
 from app.models import Customer, PointsTransaction, User
 from app.schemas.schemas import CustomerCreate, CustomerUpdate, CustomerResponse, PublicCustomerRegistration
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, get_effective_company_id, require_admin_or_master
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/clientes", tags=["Customers"])
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/clientes", tags=["Customers"])
 def criar_cliente(
     body: CustomerCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Cria novo cliente"""
     
@@ -22,7 +22,7 @@ def criar_cliente(
         telefone=body.telefone,
         email=body.email,
         data_nascimento=body.data_nascimento,  # NOVO
-        company_id=current_user.company_id,
+        company_id=company_id,
         pontos=0.0,
         ativo=True  # NOVO
     )
@@ -45,7 +45,7 @@ def criar_cliente(
     }
 
 @router.post("/registro-link")
-def gerar_link_cadastro(current_user: User = Depends(get_current_user)):
+def gerar_link_cadastro(current_user: User = Depends(require_admin_or_master)):
     """Gera um convite seguro para cadastro público de clientes."""
     token = AuthService.create_customer_registration_token(current_user.company_id)
     return {"success": True, "data": {"token": token, "expires_in_days": 30}}
@@ -79,12 +79,12 @@ def listar_clientes(
     limit: int = Query(50, ge=1, le=100),
     search: str = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Lista clientes com filtros e paginação"""
     
     query = db.query(Customer).filter(
-        Customer.company_id == current_user.company_id,
+        Customer.company_id == company_id,
         Customer.ativo == True  # Apenas clientes ativos
     )
     
@@ -127,13 +127,13 @@ def listar_clientes(
 def obter_cliente(
     cliente_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Obtém detalhes do cliente com histórico de transações"""
     
     cliente = db.query(Customer).filter(
         Customer.id == cliente_id,
-        Customer.company_id == current_user.company_id,
+        Customer.company_id == company_id,
         Customer.ativo == True  # Apenas clientes ativos
     ).first()
     
@@ -186,13 +186,14 @@ def atualizar_cliente(
     cliente_id: int,
     body: CustomerUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Atualiza dados do cliente (não pontos!)"""
     
     cliente = db.query(Customer).filter(
         Customer.id == cliente_id,
-        Customer.company_id == current_user.company_id
+        Customer.company_id == company_id
     ).first()
     
     if not cliente:
@@ -242,13 +243,14 @@ def atualizar_cliente(
 def deletar_cliente(
     cliente_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Deleta (desativa) cliente logicamente"""
     
     cliente = db.query(Customer).filter(
         Customer.id == cliente_id,
-        Customer.company_id == current_user.company_id
+        Customer.company_id == company_id
     ).first()
     
     if not cliente:
@@ -267,13 +269,13 @@ def deletar_cliente(
 def obter_detalhes_cliente(
     cliente_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    company_id: int = Depends(get_effective_company_id)
 ):
     """Obtém detalhes completos do cliente para o modal de edição"""
     
     cliente = db.query(Customer).filter(
         Customer.id == cliente_id,
-        Customer.company_id == current_user.company_id
+        Customer.company_id == company_id
     ).first()
     
     if not cliente:

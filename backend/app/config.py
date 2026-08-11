@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    # Master user bootstrap. Set MASTER_PASSWORD only in the hosting panel.
+    master_email: Optional[str] = os.getenv("MASTER_EMAIL")
+    master_password: Optional[str] = os.getenv("MASTER_PASSWORD")
+
     # App.
     debug: bool = True
     api_host: str = "0.0.0.0"

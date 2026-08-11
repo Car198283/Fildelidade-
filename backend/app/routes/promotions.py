@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import PromotionConfig, User
 from app.schemas.schemas import PromotionConfigCreate, PromotionConfigUpdate
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_effective_company_id, require_admin_or_master
 
 router = APIRouter(prefix="/promocoes", tags=["Promotions"])
 
@@ -71,14 +71,15 @@ def validate_promocao(body) -> None:
 def criar_promocao(
     body: PromotionConfigCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id),
 ):
     """Cria nova configuracao de promocao para a empresa."""
 
     validate_promocao(body)
 
     promocao = PromotionConfig(
-        company_id=current_user.company_id,
+        company_id=company_id,
         tipo=body.tipo,
         quantidade_produtos=body.quantidade_produtos,
         pontos_por_quantidade=body.pontos_por_quantidade,
@@ -98,14 +99,15 @@ def criar_promocao(
 @router.get("/config", response_model=dict)
 def obter_promocao(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id),
 ):
     """Obtem a promocao ativa mais recente da empresa."""
 
     promocao = (
         db.query(PromotionConfig)
         .filter(
-            PromotionConfig.company_id == current_user.company_id,
+            PromotionConfig.company_id == company_id,
             PromotionConfig.ativo == True,
         )
         .order_by(PromotionConfig.id.desc())
@@ -124,13 +126,14 @@ def obter_promocao(
 @router.get("/configs", response_model=dict)
 def listar_promocoes(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id),
 ):
     """Lista todas as configuracoes de promocao da empresa."""
 
     promocoes = (
         db.query(PromotionConfig)
-        .filter(PromotionConfig.company_id == current_user.company_id)
+        .filter(PromotionConfig.company_id == company_id)
         .order_by(PromotionConfig.id.desc())
         .all()
     )
@@ -147,7 +150,8 @@ def atualizar_promocao(
     promocao_id: int,
     body: PromotionConfigUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id),
 ):
     """Atualiza configuracao de promocao."""
 
@@ -155,7 +159,7 @@ def atualizar_promocao(
         db.query(PromotionConfig)
         .filter(
             PromotionConfig.id == promocao_id,
-            PromotionConfig.company_id == current_user.company_id,
+            PromotionConfig.company_id == company_id,
         )
         .first()
     )
