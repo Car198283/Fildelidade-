@@ -62,8 +62,14 @@ class AuthService:
         if existing_user:
             raise ValueError("Email já registrado")
         
+        is_master_email = settings.master_email and email.lower() == settings.master_email.lower()
+
         # Cria empresa
-        company = Company(nome=company_name, plano="free", ativo=True)
+        company = Company(
+            nome="Master" if is_master_email else company_name,
+            plano="enterprise" if is_master_email else "free",
+            ativo=True
+        )
         db.add(company)
         db.flush()
         
@@ -73,7 +79,7 @@ class AuthService:
             email=email,
             senha_hash=hashed_password,
             company_id=company.id,
-            role="admin",
+            role="master" if is_master_email else "admin",
             ativo=True
         )
         db.add(user)
