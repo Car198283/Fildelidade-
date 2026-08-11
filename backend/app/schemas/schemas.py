@@ -48,6 +48,11 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     senha: str = Field(..., min_length=6, max_length=72)
 
+class BootstrapMasterRequest(BaseModel):
+    email: EmailStr
+    senha: str = Field(..., min_length=6, max_length=72)
+    secret_key: str = Field(..., min_length=16)
+
 class UserResponse(UserBase):
     id: int
     company_id: int
