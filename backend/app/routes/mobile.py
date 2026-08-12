@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Customer, User, PointsTransaction
 from app.schemas.schemas import CustomerCreate, PointsTransactionCreate
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, get_writable_company_id
 from datetime import datetime
 
 router = APIRouter(prefix="/mobile", tags=["Mobile"])
@@ -15,7 +15,8 @@ def registrar_cliente_mobile(
     email: str = Query(None),
     data_nascimento: str = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_writable_company_id)
 ):
     """
     Registra novo cliente via mobile (simplificado)
@@ -26,7 +27,7 @@ def registrar_cliente_mobile(
     # Verifica se telefone já existe
     cliente_existente = db.query(Customer).filter(
         Customer.telefone == telefone,
-        Customer.company_id == current_user.company_id
+        Customer.company_id == company_id
     ).first()
     
     if cliente_existente:
@@ -56,7 +57,7 @@ def registrar_cliente_mobile(
         telefone=telefone,
         email=email,
         data_nascimento=data_nasc,
-        company_id=current_user.company_id,
+        company_id=company_id,
         pontos=0.0,
         ativo=True
     )
@@ -135,7 +136,8 @@ def lancar_pontos_por_telefone(
     pontos: float = Query(..., gt=0),
     descricao: str = Query(None, max_length=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_writable_company_id)
 ):
     """
     Lança pontos para cliente via telefone
@@ -147,7 +149,7 @@ def lancar_pontos_por_telefone(
     # Busca cliente
     cliente = db.query(Customer).filter(
         Customer.telefone == telefone,
-        Customer.company_id == current_user.company_id,
+        Customer.company_id == company_id,
         Customer.ativo == True
     ).first()
     
@@ -170,7 +172,7 @@ def lancar_pontos_por_telefone(
     # Cria transação
     transacao = PointsTransaction(
         customer_id=cliente.id,
-        company_id=current_user.company_id,
+        company_id=company_id,
         pontos=pontos,
         tipo="entrada",
         descricao=descricao or f"Lançamento manual via mobile"
@@ -199,7 +201,8 @@ def resgatar_pontos_por_telefone(
     pontos: float = Query(..., gt=0),
     descricao: str = Query(None, max_length=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_writable_company_id)
 ):
     """
     Resgata (desconta) pontos de cliente via telefone
@@ -211,7 +214,7 @@ def resgatar_pontos_por_telefone(
     # Busca cliente
     cliente = db.query(Customer).filter(
         Customer.telefone == telefone,
-        Customer.company_id == current_user.company_id,
+        Customer.company_id == company_id,
         Customer.ativo == True
     ).first()
     
@@ -234,7 +237,7 @@ def resgatar_pontos_por_telefone(
     # Cria transação
     transacao = PointsTransaction(
         customer_id=cliente.id,
-        company_id=current_user.company_id,
+        company_id=company_id,
         pontos=pontos,
         tipo="saida",
         descricao=descricao or "Resgate de pontos via mobile"

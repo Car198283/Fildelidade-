@@ -51,7 +51,17 @@ def get_db() -> Session:
 def ensure_runtime_schema():
     """Aplica pequenas migracoes compativeis com bancos SQLite existentes."""
     inspector = inspect(engine)
-    if "points_transactions" not in inspector.get_table_names():
+    table_names = inspector.get_table_names()
+    if "companies" in table_names:
+        company_columns = {column["name"] for column in inspector.get_columns("companies")}
+        with engine.begin() as conn:
+            if "read_only" not in company_columns:
+                if engine.dialect.name == "postgresql":
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN read_only BOOLEAN NOT NULL DEFAULT false"))
+                else:
+                    conn.execute(text("ALTER TABLE companies ADD COLUMN read_only BOOLEAN NOT NULL DEFAULT 0"))
+
+    if "points_transactions" not in table_names:
         return
 
     columns = {column["name"] for column in inspector.get_columns("points_transactions")}

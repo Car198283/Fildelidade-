@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Company, User
-from app.schemas.schemas import ManagedUserCreate, ManagedUserUpdate
+from app.schemas.schemas import ManagedCompanyUpdate, ManagedUserCreate, ManagedUserUpdate
 from app.services.auth_service import AuthService
 from app.utils.dependencies import (
     ROLE_MASTER,
@@ -22,6 +22,7 @@ def serialize_company(company: Company) -> dict:
         "nome": company.nome,
         "plano": company.plano,
         "ativo": company.ativo,
+        "read_only": company.read_only,
         "created_at": company.created_at,
     }
 
@@ -50,6 +51,37 @@ def listar_empresas(
 ):
     empresas = db.query(Company).order_by(Company.nome.asc()).all()
     return {"success": True, "data": [serialize_company(company) for company in empresas]}
+
+
+@router.put("/companies/{company_id}")
+def atualizar_empresa(
+    company_id: int,
+    body: ManagedCompanyUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_master),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa nao encontrada")
+
+    if company.id == current_user.company_id and body.ativo is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Master nao pode bloquear a propria empresa")
+
+    if body.ativo is not None:
+        company.ativo = body.ativo
+        if body.ativo is False:
+            company.read_only = False
+
+    if body.read_only is not None:
+        if body.read_only and company.id == current_user.company_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Master nao pode limitar a propria empresa")
+        if body.read_only and not company.ativo:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empresa bloqueada nao pode ficar somente leitura")
+        company.read_only = body.read_only
+
+    db.commit()
+    db.refresh(company)
+    return {"success": True, "data": serialize_company(company)}
 
 
 @router.get("/users")

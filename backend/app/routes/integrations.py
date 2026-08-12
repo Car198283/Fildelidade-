@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.schemas import WhatsAppMessageStatusUpdate, WhatsAppQueueGenerate
 from app.services.whatsapp_service import WhatsAppService
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, get_writable_company_id
 
 router = APIRouter(prefix="/integracoes/n8n", tags=["Integracoes n8n"])
 
@@ -31,13 +31,14 @@ def gerar_fila_whatsapp(
     body: WhatsAppQueueGenerate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_writable_company_id),
 ):
     """Gera mensagens pendentes para o n8n enviar por WhatsApp."""
 
     try:
         messages = WhatsAppService.generate_queue(
             db=db,
-            company_id=current_user.company_id,
+            company_id=company_id,
             tipo=body.tipo,
             template=body.mensagem_template,
             customer_id=body.customer_id,
@@ -77,12 +78,13 @@ def atualizar_status_whatsapp(
     body: WhatsAppMessageStatusUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_writable_company_id),
 ):
     """Marca mensagem como enviada, erro, cancelada etc."""
 
     message = WhatsAppService.update_status(
         db=db,
-        company_id=current_user.company_id,
+        company_id=company_id,
         message_id=message_id,
         status=body.status,
         provider_message_id=body.provider_message_id,

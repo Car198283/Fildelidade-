@@ -83,7 +83,9 @@ class AuthService:
         return {
             "user_id": user.id,
             "company_id": company.id,
-            "email": user.email
+            "email": user.email,
+            "role": user.role,
+            "company_read_only": company.read_only
         }
     
     @staticmethod
@@ -132,5 +134,6 @@ class AuthService:
             "user_id": user.id,
             "company_id": user.company_id,
             "email": user.email,
-            "role": user.role
+            "role": user.role,
+            "company_read_only": company.read_only
         }

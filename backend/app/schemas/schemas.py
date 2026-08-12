@@ -14,6 +14,7 @@ class CompanyCreate(CompanyBase):
 class CompanyResponse(CompanyBase):
     id: int
     ativo: bool
+    read_only: bool
     created_at: datetime
     
     class Config:
@@ -38,6 +39,10 @@ class ManagedUserUpdate(BaseModel):
     role: Optional[str] = Field(None, pattern="^(admin|observador)$")
     ativo: Optional[bool] = None
     senha: Optional[str] = Field(None, min_length=6, max_length=72)
+
+class ManagedCompanyUpdate(BaseModel):
+    ativo: Optional[bool] = None
+    read_only: Optional[bool] = None
 
 class UserLogin(BaseModel):
     email: EmailStr

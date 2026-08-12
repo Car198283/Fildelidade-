@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.schemas import PointsTransactionCreate
 from app.services.points_service import PointsService
-from app.utils.dependencies import get_current_user, get_effective_company_id
+from app.utils.dependencies import get_current_user, get_effective_company_id, get_writable_company_id
 
 router = APIRouter(prefix="/clientes", tags=["Points"])
 
@@ -14,7 +14,7 @@ def movimentar_pontos(
     body: PointsTransactionCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """
     Movimenta pontos do cliente (entrada ou saida)

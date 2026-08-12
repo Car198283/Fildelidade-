@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import User, Product
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductResponse
 from app.services.product_service import ProductImportService
-from app.utils.dependencies import get_current_user, get_effective_company_id, require_admin_or_master
+from app.utils.dependencies import get_current_user, get_effective_company_id, get_writable_company_id, require_admin_or_master
 import pandas as pd
 import io
 
@@ -15,7 +15,8 @@ router = APIRouter(prefix="/produtos", tags=["Products"])
 async def importar_produtos(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin_or_master)
+    current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Importa produtos de arquivo Excel"""
     
@@ -39,7 +40,7 @@ async def importar_produtos(
         # Importa
         result = ProductImportService.importar_produtos(
             db=db,
-            company_id=current_user.company_id,
+            company_id=company_id,
             df=df
         )
         
@@ -138,7 +139,7 @@ def criar_produto(
     body: ProductCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Cria novo produto"""
     
@@ -196,7 +197,7 @@ def atualizar_produto(
     body: ProductUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Atualiza produto"""
     
@@ -232,7 +233,7 @@ def deletar_produto(
     produto_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Deleta produto"""
     

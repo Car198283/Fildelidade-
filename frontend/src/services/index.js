@@ -19,6 +19,8 @@ export const adminService = {
 
   companies: () => api.get("/admin/companies"),
 
+  updateCompany: (id, data) => api.put(`/admin/companies/${id}`, data),
+
   users: (companyId = null) =>
     api.get("/admin/users", { params: { company_id: companyId } }),
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import PromotionConfig, User
 from app.schemas.schemas import PromotionConfigCreate, PromotionConfigUpdate
-from app.utils.dependencies import get_effective_company_id, require_admin_or_master
+from app.utils.dependencies import get_effective_company_id, get_writable_company_id, require_admin_or_master
 
 router = APIRouter(prefix="/promocoes", tags=["Promotions"])
 
@@ -72,7 +72,7 @@ def criar_promocao(
     body: PromotionConfigCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id),
+    company_id: int = Depends(get_writable_company_id),
 ):
     """Cria nova configuracao de promocao para a empresa."""
 
@@ -151,7 +151,7 @@ def atualizar_promocao(
     body: PromotionConfigUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id),
+    company_id: int = Depends(get_writable_company_id),
 ):
     """Atualiza configuracao de promocao."""
 

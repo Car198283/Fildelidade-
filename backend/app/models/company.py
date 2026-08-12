@@ -11,6 +11,7 @@ class Company(Base, TimestampMixin):
     nome = Column(String(255), nullable=False)
     plano = Column(String(50), default="free")  # free, starter, pro, enterprise
     ativo = Column(Boolean, default=True)
+    read_only = Column(Boolean, default=False, nullable=False)
 
     # Relacionamentos
     users = relationship("User", back_populates="company", cascade="all, delete-orphan")

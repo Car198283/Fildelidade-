@@ -28,6 +28,9 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(false);
 
   const isMaster = currentUser.role === "master";
+  const selectedCompany = companies.find(
+    (company) => String(company.id) === String(selectedCompanyId),
+  );
 
   const loadUsers = async () => {
     const response = await adminService.users(isMaster ? selectedCompanyId || null : null);
@@ -88,6 +91,18 @@ export default function UserManagement() {
     await loadUsers();
   };
 
+  const updateCompanyStatus = async (data) => {
+    if (!selectedCompanyId) return;
+    setMessage("");
+    try {
+      await adminService.updateCompany(selectedCompanyId, data);
+      await loadCompanies();
+      setMessage("Status da empresa atualizado.");
+    } catch (error) {
+      setMessage(error.response?.data?.detail || "Nao foi possivel atualizar a empresa.");
+    }
+  };
+
   return (
     <div className="users-page">
       <div className="users-header">
@@ -99,14 +114,48 @@ export default function UserManagement() {
 
       {isMaster && (
         <section className="users-panel">
-          <label>Empresa em gestao</label>
-          <select value={selectedCompanyId} onChange={handleCompanyChange}>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.nome}
-              </option>
-            ))}
-          </select>
+          <div className="company-control">
+            <div>
+              <label>Empresa em gestao</label>
+              <select value={selectedCompanyId} onChange={handleCompanyChange}>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCompany && (
+              <div className="company-status">
+                <span className={selectedCompany.ativo ? "status-active" : "status-blocked"}>
+                  {selectedCompany.ativo ? "Ativa" : "Bloqueada"}
+                </span>
+                <span className={selectedCompany.read_only ? "status-readonly" : "status-active"}>
+                  {selectedCompany.read_only ? "Somente leitura" : "Liberada para edicao"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {selectedCompany && (
+            <div className="company-actions">
+              <button
+                type="button"
+                className={selectedCompany.ativo ? "danger" : "success"}
+                onClick={() => updateCompanyStatus({ ativo: !selectedCompany.ativo })}
+              >
+                {selectedCompany.ativo ? "Bloquear conta" : "Desbloquear conta"}
+              </button>
+              <button
+                type="button"
+                disabled={!selectedCompany.ativo}
+                onClick={() => updateCompanyStatus({ read_only: !selectedCompany.read_only })}
+              >
+                {selectedCompany.read_only ? "Liberar edicao" : "Somente leitura"}
+              </button>
+            </div>
+          )}
         </section>
       )}
 

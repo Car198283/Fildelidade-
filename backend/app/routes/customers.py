@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from app.database import get_db
-from app.models import Customer, PointsTransaction, User
+from app.models import Company, Customer, PointsTransaction, User
 from app.schemas.schemas import CustomerCreate, CustomerUpdate, CustomerResponse, PublicCustomerRegistration
-from app.utils.dependencies import get_current_user, get_effective_company_id, require_admin_or_master
+from app.utils.dependencies import get_current_user, get_effective_company_id, get_writable_company_id, require_admin_or_master
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/clientes", tags=["Customers"])
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/clientes", tags=["Customers"])
 def criar_cliente(
     body: CustomerCreate,
     db: Session = Depends(get_db),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Cria novo cliente"""
     
@@ -59,6 +59,12 @@ def cadastrar_cliente_publico(
     company_id = AuthService.verify_customer_registration_token(body.token)
     if company_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Link de cadastro inválido ou expirado")
+
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company or not company.ativo:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Empresa bloqueada")
+    if company.read_only:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta em somente leitura")
 
     cliente = Customer(
         nome=body.nome.strip(),
@@ -187,7 +193,7 @@ def atualizar_cliente(
     body: CustomerUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Atualiza dados do cliente (não pontos!)"""
     
@@ -244,7 +250,7 @@ def deletar_cliente(
     cliente_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
-    company_id: int = Depends(get_effective_company_id)
+    company_id: int = Depends(get_writable_company_id)
 ):
     """Deleta (desativa) cliente logicamente"""
     

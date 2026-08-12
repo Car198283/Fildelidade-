@@ -39,6 +39,13 @@ def get_current_user(
     if not user.ativo:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuario inativo")
 
+    company = db.query(Company).filter(Company.id == user.company_id).first()
+    if not company:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Empresa nao encontrada")
+
+    if not company.ativo and not is_master(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Empresa bloqueada")
+
     return user
 
 
@@ -75,3 +82,20 @@ def get_effective_company_id(
         return company_id
 
     return current_user.company_id
+
+
+def get_writable_company_id(
+    company_id: int = Depends(get_effective_company_id),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> int:
+    """Empresa de escrita. Conta em somente leitura pode consultar, mas nao alterar dados."""
+    if is_master(current_user):
+        return company_id
+
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company or not company.ativo:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Empresa bloqueada")
+    if company.read_only:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta em somente leitura")
+    return company_id

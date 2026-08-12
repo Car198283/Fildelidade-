@@ -70,6 +70,61 @@
   cursor: pointer;
 }
 
+.users-panel button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.users-panel button.danger {
+  background: #b91c1c;
+}
+
+.users-panel button.success {
+  background: #047857;
+}
+
+.company-control {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.company-status,
+.company-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.company-status span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-blocked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-readonly {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.company-actions {
+  margin-top: 14px;
+}
+
 .users-list {
   display: grid;
   gap: 10px;
@@ -106,6 +161,10 @@
   }
 
   .users-form {
+    grid-template-columns: 1fr;
+  }
+
+  .company-control {
     grid-template-columns: 1fr;
   }
 
