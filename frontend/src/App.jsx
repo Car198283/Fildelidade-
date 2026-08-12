@@ -109,7 +109,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["admin", "master"]}>
               <ProtectedLayout>
                 <Dashboard />
               </ProtectedLayout>
@@ -182,6 +182,7 @@ export default function App() {
         />
 
         <Route path="/capture" element={<Navigate to="/captura" />} />
+        <Route path="/celular" element={<Navigate to="/captura" />} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>

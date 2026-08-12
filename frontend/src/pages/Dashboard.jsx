@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { dashboardService, customerService, pointsService } from "../services";
+import { adminService, dashboardService, customerService, pointsService } from "../services";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -10,6 +10,7 @@ export default function Dashboard() {
     [],
   );
   const [clientesQuasePremiados, setClientesQuasePremiados] = useState([]);
+  const [currentCompany, setCurrentCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingCliente, setEditingCliente] = useState(null);
   const [formData, setFormData] = useState({
@@ -21,12 +22,17 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, topRes, productsRes, premiadosRes, quaseRes] = await Promise.all([
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const companyRequest =
+        user.role === "master" ? adminService.companies() : adminService.me();
+
+      const [statsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.all([
         dashboardService.stats(),
         dashboardService.topCustomers(10),
         dashboardService.topProducts(10),
         dashboardService.clientesPremiadosCompleto(),
         dashboardService.clientesQuasePremiados(),
+        companyRequest,
       ]);
 
       setStats(statsRes.data.data);
@@ -34,6 +40,21 @@ export default function Dashboard() {
       setTopProducts(productsRes.data.data);
       setClientesPremiadosCompleto(premiadosRes.data.data);
       setClientesQuasePremiados(quaseRes.data.data);
+
+      if (user.role === "master") {
+        const selectedCompanyId = localStorage.getItem("selectedCompanyId") || user.company_id;
+        const companies = companyRes.data?.data || [];
+        setCurrentCompany(
+          companies.find((company) => String(company.id) === String(selectedCompanyId)) || null,
+        );
+      } else {
+        const me = companyRes.data?.data || {};
+        setCurrentCompany({
+          id: me.company_id,
+          nome: me.company_name || "Minha empresa",
+          read_only: me.company_read_only,
+        });
+      }
     } catch (err) {
       console.error("Erro ao carregar dashboard", err);
     } finally {
@@ -138,7 +159,18 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      <h1>📊 Dashboard</h1>
+      <div className="dashboard-heading">
+        <div>
+          <h1>Dashboard</h1>
+          <p>
+            Empresa em visualizacao:{" "}
+            <strong>{currentCompany?.nome || "Nao identificada"}</strong>
+          </p>
+        </div>
+        {currentCompany?.read_only && (
+          <span className="dashboard-status">Somente leitura</span>
+        )}
+      </div>
 
       {stats && (
         <div className="stats-grid">

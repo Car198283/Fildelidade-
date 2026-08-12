@@ -33,7 +33,11 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(response.data.data));
 
       const nextPath = searchParams.get("next");
-      navigate(nextPath?.startsWith("/") ? nextPath : "/dashboard");
+      if (nextPath?.startsWith("/")) {
+        navigate(nextPath === "/celular" ? "/captura" : nextPath);
+      } else {
+        navigate(response.data.data.role === "observador" ? "/captura" : "/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Email ou senha incorretos");
     } finally {

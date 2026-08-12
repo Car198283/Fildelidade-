@@ -7,9 +7,33 @@
 }
 
 .dashboard h1 {
-  margin: 20px 0;
+  margin: 0;
   color: #333;
   font-size: 28px;
+}
+
+.dashboard-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.dashboard-heading p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.dashboard-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 800;
 }
 
 .stats-grid {

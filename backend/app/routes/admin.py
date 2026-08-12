@@ -28,7 +28,7 @@ def serialize_company(company: Company) -> dict:
 
 
 def serialize_user(user: User) -> dict:
-    return {
+    data = {
         "id": user.id,
         "email": user.email,
         "company_id": user.company_id,
@@ -36,6 +36,10 @@ def serialize_user(user: User) -> dict:
         "ativo": user.ativo,
         "created_at": user.created_at,
     }
+    if user.company:
+        data["company_name"] = user.company.nome
+        data["company_read_only"] = user.company.read_only
+    return data
 
 
 def resolve_company_id(current_user: User, requested_company_id: int | None) -> int:
