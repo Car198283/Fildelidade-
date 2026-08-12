@@ -59,6 +59,7 @@ export default function MobileCapture() {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("mobileCaptureOnly");
     window.location.href = "/login?next=/captura";
   };
 

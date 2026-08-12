@@ -33,6 +33,10 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(response.data.data));
 
       const nextPath = searchParams.get("next");
+      if (nextPath === "/celular" || nextPath === "/captura") {
+        localStorage.setItem("mobileCaptureOnly", "1");
+      }
+
       if (nextPath?.startsWith("/")) {
         navigate(nextPath === "/celular" ? "/captura" : nextPath);
       } else {

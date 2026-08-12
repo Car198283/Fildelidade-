@@ -36,9 +36,14 @@ function PrivateRoute({ children, roles = [] }) {
   const token = localStorage.getItem("accessToken");
   const location = useLocation();
   const user = getStoredUser();
+  const mobileCaptureOnly = localStorage.getItem("mobileCaptureOnly") === "1";
 
   if (!token) {
     return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />;
+  }
+
+  if (mobileCaptureOnly && location.pathname !== "/captura") {
+    return <Navigate to="/captura" />;
   }
 
   if (roles.length && !roles.includes(user.role)) {
@@ -57,6 +62,7 @@ function ProtectedLayout({ children }) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("user");
     localStorage.removeItem("selectedCompanyId");
+    localStorage.removeItem("mobileCaptureOnly");
     window.location.href = "/login";
   };
 
@@ -96,6 +102,11 @@ function ProtectedLayout({ children }) {
       <main className="main-content">{children}</main>
     </div>
   );
+}
+
+function MobileCaptureEntry() {
+  localStorage.setItem("mobileCaptureOnly", "1");
+  return <Navigate to="/captura" replace />;
 }
 
 export default function App() {
@@ -182,7 +193,7 @@ export default function App() {
         />
 
         <Route path="/capture" element={<Navigate to="/captura" />} />
-        <Route path="/celular" element={<Navigate to="/captura" />} />
+        <Route path="/celular" element={<MobileCaptureEntry />} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
