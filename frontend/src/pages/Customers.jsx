@@ -98,6 +98,7 @@ export default function Customers() {
       <h1>👥 Clientes</h1>
 
       <div className="controls">
+        <div className="search-label">Buscar por nome ou telefone</div>
         <input
           type="text"
           placeholder="🔍 Buscar cliente..."
@@ -107,6 +108,18 @@ export default function Customers() {
             setPage(1);
           }}
         />
+        {search && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              setSearch("");
+              setPage(1);
+            }}
+          >
+            Limpar
+          </button>
+        )}
 
         <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
           ➕ Novo Cliente

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, text
+from sqlalchemy import func, or_, text
 from app.database import get_db
 from app.models import Company, Customer, PointsTransaction, User
 from app.schemas.schemas import CustomerCreate, CustomerUpdate, CustomerResponse, PublicCustomerRegistration
@@ -94,14 +94,38 @@ def listar_clientes(
         Customer.ativo == True  # Apenas clientes ativos
     )
     
-    # Filtro de busca (por nome, telefone ou email)
+    # Filtro de busca por nome, telefone ou email. Para telefone, tambem compara so os numeros.
     if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            (Customer.nome.ilike(search_term)) |
-            (Customer.telefone.ilike(search_term)) |
-            (Customer.email.ilike(search_term))
-        )
+        search_value = search.strip()
+        search_term = f"%{search_value}%"
+        filters = [
+            Customer.nome.ilike(search_term),
+            Customer.telefone.ilike(search_term),
+            Customer.email.ilike(search_term),
+        ]
+
+        digits = "".join(char for char in search_value if char.isdigit())
+        if digits:
+            phone_digits = func.replace(
+                func.replace(
+                    func.replace(
+                        func.replace(
+                            func.replace(Customer.telefone, " ", ""),
+                            "-",
+                            "",
+                        ),
+                        "(",
+                        "",
+                    ),
+                    ")",
+                    "",
+                ),
+                "+",
+                "",
+            )
+            filters.append(phone_digits.ilike(f"%{digits}%"))
+
+        query = query.filter(or_(*filters))
     
     total = query.count()
     
