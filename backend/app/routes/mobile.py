@@ -5,6 +5,7 @@ from app.models import Customer, User, PointsTransaction
 from app.schemas.schemas import CustomerCreate, PointsTransactionCreate
 from app.utils.dependencies import get_current_user, get_writable_company_id, require_capture_operator, require_points_write_access
 from datetime import datetime
+from decimal import Decimal
 
 router = APIRouter(prefix="/mobile", tags=["Mobile"])
 
@@ -159,21 +160,23 @@ def lancar_pontos_por_telefone(
             detail=f"Cliente com telefone {telefone} não encontrado"
         )
     
+    pontos_decimal = Decimal(str(pontos))
+
     # Valida pontos
-    if pontos <= 0:
+    if pontos_decimal <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Pontos devem ser maiores que zero"
         )
     
     # Adiciona pontos
-    cliente.pontos += pontos
+    cliente.pontos += pontos_decimal
     
     # Cria transação
     transacao = PointsTransaction(
         customer_id=cliente.id,
         company_id=company_id,
-        pontos=pontos,
+        pontos=pontos_decimal,
         tipo="entrada",
         descricao=descricao or f"Lançamento manual via mobile"
     )
@@ -225,20 +228,22 @@ def resgatar_pontos_por_telefone(
         )
     
     # Valida saldo
-    if cliente.pontos < pontos:
+    pontos_decimal = Decimal(str(pontos))
+
+    if cliente.pontos < pontos_decimal:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Saldo insuficiente. Cliente tem {cliente.pontos:.2f} pontos, tentou resgatar {pontos}"
         )
     
     # Desconta pontos
-    cliente.pontos -= pontos
+    cliente.pontos -= pontos_decimal
     
     # Cria transação
     transacao = PointsTransaction(
         customer_id=cliente.id,
         company_id=company_id,
-        pontos=pontos,
+        pontos=pontos_decimal,
         tipo="saida",
         descricao=descricao or "Resgate de pontos via mobile"
     )

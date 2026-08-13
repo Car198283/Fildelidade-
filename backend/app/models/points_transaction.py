@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Index
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.models.base import Base, TimestampMixin
@@ -12,7 +12,7 @@ class PointsTransaction(Base, TimestampMixin):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=True, index=True)
     product_nome = Column(String(255), nullable=True)
-    pontos = Column(Float, nullable=False)  # Valor da transação
+    pontos = Column(Numeric(12, 2), nullable=False)  # Valor da transacao
     tipo = Column(String(20), nullable=False)  # "entrada" ou "saida"
     descricao = Column(String(255), nullable=True)
     

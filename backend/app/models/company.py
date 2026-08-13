@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.models.base import Base, TimestampMixin
@@ -10,7 +10,7 @@ class Company(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
     razao_social = Column(String(255), nullable=True)
-    cnpj = Column(String(30), nullable=True, index=True)
+    cnpj = Column(String(14), nullable=True, index=True)
     telefone = Column(String(30), nullable=True)
     email = Column(String(255), nullable=True)
     responsavel = Column(String(255), nullable=True)
@@ -32,3 +32,7 @@ class Company(Base, TimestampMixin):
     categories = relationship("Category", back_populates="company", cascade="all, delete-orphan")
     points_transactions = relationship("PointsTransaction", back_populates="company", cascade="all, delete-orphan")
     promotion_configs = relationship("PromotionConfig", back_populates="company", cascade="all, delete-orphan")  # NOVO
+
+    __table_args__ = (
+        UniqueConstraint("cnpj", name="uq_companies_cnpj"),
+    )

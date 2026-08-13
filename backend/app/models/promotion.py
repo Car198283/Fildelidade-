@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Index, Enum as SQLEnum, Boolean
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Index, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -24,14 +24,14 @@ class PromotionConfig(Base, TimestampMixin):
     # Configurações por tipo:
     # QUANTIDADE: a cada X produtos comprados, ganha Y pontos
     quantidade_produtos = Column(Integer, nullable=True)  # Ex: 10 produtos
-    pontos_por_quantidade = Column(Float, nullable=True)  # Ex: 1 ponto
+    pontos_por_quantidade = Column(Numeric(12, 2), nullable=True)  # Ex: 1 ponto
     
     # VALOR: a cada R$ X gasto, ganha Y pontos
-    valor_gasto = Column(Float, nullable=True)  # Ex: R$ 100.00
-    pontos_por_valor = Column(Float, nullable=True)  # Ex: 10 pontos
+    valor_gasto = Column(Numeric(12, 2), nullable=True)  # Ex: R$ 100.00
+    pontos_por_valor = Column(Numeric(12, 2), nullable=True)  # Ex: 10 pontos
     
     # PERCENTUAL: % do valor em pontos
-    percentual = Column(Float, nullable=True)  # Ex: 5% = 5.0
+    percentual = Column(Numeric(5, 2), nullable=True)  # Ex: 5% = 5.0
     
     # Informações
     descricao = Column(String(500), nullable=True)

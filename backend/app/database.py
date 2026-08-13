@@ -48,6 +48,42 @@ def get_db() -> Session:
     finally:
         db.close()
 
+
+def _normalize_existing_company_cnpjs(conn):
+    if engine.dialect.name == "postgresql":
+        conn.execute(
+            text("UPDATE companies SET cnpj = regexp_replace(cnpj, '\\D', '', 'g') WHERE cnpj IS NOT NULL")
+        )
+    else:
+        conn.execute(
+            text(
+                "UPDATE companies SET cnpj = "
+                "replace(replace(replace(replace(replace(cnpj, '.', ''), '-', ''), '/', ''), ' ', ''), '\\', '') "
+                "WHERE cnpj IS NOT NULL"
+            )
+        )
+
+
+def _create_company_cnpj_unique_index(conn):
+    duplicates = conn.execute(
+        text(
+            "SELECT cnpj FROM companies "
+            "WHERE cnpj IS NOT NULL AND cnpj != '' "
+            "GROUP BY cnpj HAVING COUNT(*) > 1 LIMIT 1"
+        )
+    ).first()
+    if duplicates:
+        print("[AVISO] CNPJ duplicado encontrado; indice unico de companies.cnpj nao foi criado")
+        return
+
+    conn.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_cnpj "
+            "ON companies (cnpj) WHERE cnpj IS NOT NULL AND cnpj != ''"
+        )
+    )
+
+
 def ensure_runtime_schema():
     """Aplica pequenas migracoes compativeis com bancos SQLite existentes."""
     inspector = inspect(engine)
@@ -56,7 +92,7 @@ def ensure_runtime_schema():
         company_columns = {column["name"] for column in inspector.get_columns("companies")}
         company_extra_columns = {
             "razao_social": "VARCHAR(255)",
-            "cnpj": "VARCHAR(30)",
+            "cnpj": "VARCHAR(14)",
             "telefone": "VARCHAR(30)",
             "email": "VARCHAR(255)",
             "responsavel": "VARCHAR(255)",
@@ -77,6 +113,8 @@ def ensure_runtime_schema():
             for column_name, column_type in company_extra_columns.items():
                 if column_name not in company_columns:
                     conn.execute(text(f"ALTER TABLE companies ADD COLUMN {column_name} {column_type}"))
+            _normalize_existing_company_cnpjs(conn)
+            _create_company_cnpj_unique_index(conn)
 
     if "points_transactions" not in table_names:
         return

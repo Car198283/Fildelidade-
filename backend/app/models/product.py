@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from app.models.base import Base, TimestampMixin
 
@@ -9,7 +9,7 @@ class Product(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(255), nullable=False)
     categoria_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-    preco = Column(Float, nullable=False)
+    preco = Column(Numeric(12, 2), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
 
     __table_args__ = (

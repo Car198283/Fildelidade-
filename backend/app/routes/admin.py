@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Company, User
+from app.models import Company, PointsTransaction, PromotionConfig, User
 from app.schemas.schemas import ManagedCompanyCreate, ManagedCompanyUpdate, ManagedUserCreate, ManagedUserUpdate
 from app.services.auth_service import AuthService
 from app.utils.dependencies import (
@@ -37,6 +37,7 @@ def serialize_company(company: Company) -> dict:
         "ativo": company.ativo,
         "read_only": company.read_only,
         "created_at": company.created_at,
+        "updated_at": company.updated_at,
     }
 
 
@@ -48,6 +49,7 @@ def serialize_user(user: User) -> dict:
         "role": user.role,
         "ativo": user.ativo,
         "created_at": user.created_at,
+        "updated_at": user.updated_at,
     }
     if user.company:
         data["company_name"] = user.company.nome
@@ -84,37 +86,53 @@ def criar_empresa(
     if existing_company:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CNPJ ja cadastrado")
 
-    company = Company(
-        nome=body.nome,
-        razao_social=body.razao_social,
-        cnpj=body.cnpj,
-        telefone=body.telefone,
-        email=str(body.email),
-        responsavel=body.responsavel,
-        cep=body.cep,
-        endereco=body.endereco,
-        numero=body.numero,
-        bairro=body.bairro,
-        cidade=body.cidade,
-        estado=body.estado.upper() if body.estado else None,
-        logotipo=body.logotipo,
-        plano=body.plano,
-        ativo=True,
-        read_only=False,
-    )
-    db.add(company)
-    db.flush()
+    try:
+        company = Company(
+            nome=body.nome,
+            razao_social=body.razao_social,
+            cnpj=body.cnpj,
+            telefone=body.telefone,
+            email=str(body.email),
+            responsavel=body.responsavel,
+            cep=body.cep,
+            endereco=body.endereco,
+            numero=body.numero,
+            bairro=body.bairro,
+            cidade=body.cidade,
+            estado=body.estado.upper() if body.estado else None,
+            logotipo=body.logotipo,
+            plano=body.plano,
+            ativo=True,
+            read_only=False,
+        )
+        db.add(company)
+        db.flush()
 
-    user = User(
-        email=body.admin_email,
-        senha_hash=AuthService.hash_password(body.admin_senha),
-        company_id=company.id,
-        role=ROLE_ADMIN,
-        ativo=True,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(company)
+        user = User(
+            email=body.admin_email,
+            senha_hash=AuthService.hash_password(body.admin_senha),
+            company_id=company.id,
+            role=ROLE_ADMIN,
+            ativo=True,
+        )
+        db.add(user)
+
+        promotion_config = PromotionConfig(
+            company_id=company.id,
+            tipo="quantidade",
+            quantidade_produtos=10,
+            pontos_por_quantidade=1,
+            descricao="Promocao padrao inicial",
+            ativo=True,
+        )
+        db.add(promotion_config)
+
+        db.commit()
+        db.refresh(company)
+        db.refresh(user)
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "success": True,
@@ -187,6 +205,34 @@ def atualizar_empresa(
     db.commit()
     db.refresh(company)
     return {"success": True, "data": serialize_company(company)}
+
+
+@router.delete("/companies/{company_id}")
+def excluir_empresa(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_master),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa nao encontrada")
+
+    has_transactions = (
+        db.query(PointsTransaction.id)
+        .filter(PointsTransaction.company_id == company_id)
+        .first()
+        is not None
+    )
+    if has_transactions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empresa possui movimentacoes. Altere o status para bloqueada em vez de excluir.",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Exclusao fisica de empresa nao permitida. Altere o status para bloqueada.",
+    )
 
 
 @router.get("/users")

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Customer, PointsTransaction, Product
 from typing import Tuple
+from decimal import Decimal
 
 class PointsService:
     """
@@ -49,8 +50,10 @@ class PointsService:
         if not customer:
             raise ValueError("Cliente não encontrado")
         
+        pontos_decimal = Decimal(str(pontos))
+
         # Valida pontos
-        if pontos <= 0:
+        if pontos_decimal <= 0:
             raise ValueError("Pontos deve ser maior que zero")
         
         # Valida tipo
@@ -59,9 +62,9 @@ class PointsService:
         
         # Calcula novo saldo
         if tipo == "entrada":
-            novo_saldo = customer.pontos + pontos
+            novo_saldo = customer.pontos + pontos_decimal
         else:  # saida
-            novo_saldo = customer.pontos - pontos
+            novo_saldo = customer.pontos - pontos_decimal
         
         # Previne saldo negativo
         if novo_saldo < 0:
@@ -82,7 +85,7 @@ class PointsService:
             company_id=company_id,
             product_id=product.id if product else None,
             product_nome=product.nome if product else None,
-            pontos=pontos,
+            pontos=pontos_decimal,
             tipo=tipo,
             descricao=descricao
         )

@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from app.database import SessionLocal, engine
 from app.main import app
-from app.models import Base, Company, Customer, User
+from app.models import Base, Company, Customer, PointsTransaction, PromotionConfig, User
 from app.services.auth_service import AuthService
 
 
@@ -134,11 +134,18 @@ class AuthorizationTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = response.json()["data"]
         self.assertEqual(data["company"]["razao_social"], "Barcellos Gelataria LTDA")
-        self.assertEqual(data["company"]["cnpj"], "12.345.678/0001-90")
+        self.assertEqual(data["company"]["cnpj"], "12345678000190")
         self.assertEqual(data["admin"]["role"], "admin")
 
+        promotion = (
+            self.db.query(PromotionConfig)
+            .filter(PromotionConfig.company_id == data["company"]["id"])
+            .first()
+        )
+        self.assertIsNotNone(promotion)
+
     def test_master_nao_cria_empresa_com_cnpj_duplicado(self):
-        self.company.cnpj = "12.345.678/0001-90"
+        self.company.cnpj = "12345678000190"
         self.db.commit()
 
         response = self.client.post(
@@ -153,6 +160,23 @@ class AuthorizationTestCase(unittest.TestCase):
                 "admin_email": "admin-outra@example.com",
                 "admin_senha": "1234567890",
             },
+            headers=self._headers(self.master),
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_master_nao_exclui_empresa_com_movimentacao(self):
+        transaction = PointsTransaction(
+            customer_id=self.customer.id,
+            company_id=self.company.id,
+            pontos=1,
+            tipo="entrada",
+            descricao="Teste",
+        )
+        self.db.add(transaction)
+        self.db.commit()
+
+        response = self.client.delete(
+            f"/admin/companies/{self.company.id}",
             headers=self._headers(self.master),
         )
         self.assertEqual(response.status_code, 400)

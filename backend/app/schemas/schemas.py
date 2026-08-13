@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime, date
+from app.utils.cnpj import validate_cnpj_digits
 
 # ========== COMPANY ==========
 
@@ -40,6 +41,11 @@ class ManagedCompanyCreate(BaseModel):
     plano: str = Field("free", max_length=50)
     admin_email: EmailStr
     admin_senha: str = Field(..., min_length=6, max_length=72)
+
+    @field_validator("cnpj")
+    @classmethod
+    def normalize_cnpj(cls, value: str) -> str:
+        return validate_cnpj_digits(value)
 
 class CompanyResponse(CompanyBase):
     id: int
@@ -87,6 +93,11 @@ class ManagedCompanyUpdate(BaseModel):
     estado: Optional[str] = Field(None, max_length=2)
     logotipo: Optional[str] = Field(None, max_length=500)
     plano: Optional[str] = Field(None, max_length=50)
+
+    @field_validator("cnpj")
+    @classmethod
+    def normalize_cnpj(cls, value: Optional[str]) -> Optional[str]:
+        return validate_cnpj_digits(value) if value is not None else value
 
 class UserLogin(BaseModel):
     email: EmailStr

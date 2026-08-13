@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.schemas import WhatsAppMessageStatusUpdate, WhatsAppQueueGenerate
 from app.services.whatsapp_service import WhatsAppService
-from app.utils.dependencies import get_writable_company_id, require_admin_or_master
+from app.utils.dependencies import get_effective_company_id, get_writable_company_id, require_admin_or_master
 
 router = APIRouter(prefix="/integracoes/n8n", tags=["Integracoes n8n"])
 
@@ -61,10 +61,11 @@ def listar_pendentes_whatsapp(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
+    company_id: int = Depends(get_effective_company_id),
 ):
     """Lista mensagens pendentes para o n8n consumir."""
 
-    messages = WhatsAppService.list_pending(db, current_user.company_id, limit)
+    messages = WhatsAppService.list_pending(db, company_id, limit)
     return {
         "success": True,
         "total": len(messages),

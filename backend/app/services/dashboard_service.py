@@ -12,6 +12,10 @@ class DashboardService:
     """Servico de Dashboard e Relatorios"""
 
     @staticmethod
+    def _number(value) -> float:
+        return float(value or 0)
+
+    @staticmethod
     def _get_default_points_target(db: Session, company_id: int) -> float:
         promocoes = db.query(PromotionConfig).filter(
             PromotionConfig.company_id == company_id,
@@ -42,17 +46,18 @@ class DashboardService:
 
     @staticmethod
     def _build_customer_reward_data(customer: Customer, target: float) -> dict:
-        percentual = round((customer.pontos / target) * 100, 2) if target > 0 else 0
+        pontos = DashboardService._number(customer.pontos)
+        percentual = round((pontos / target) * 100, 2) if target > 0 else 0
 
         return {
             "id": customer.id,
             "nome": customer.nome,
             "telefone": customer.telefone,
             "email": customer.email,
-            "pontos": customer.pontos,
+            "pontos": pontos,
             "meta_pontos": target,
             "percentual": percentual,
-            "falta": max(round(target - customer.pontos, 2), 0),
+            "falta": max(round(target - pontos, 2), 0),
             "created_at": customer.created_at
         }
 
@@ -73,7 +78,7 @@ class DashboardService:
         clientes_premiados = sum(
             1
             for cliente in clientes_ativos
-            if cliente.pontos >= DashboardService._get_customer_points_target(cliente, max_pontos)
+            if DashboardService._number(cliente.pontos) >= DashboardService._get_customer_points_target(cliente, max_pontos)
         )
 
         data_limite = datetime.now() - timedelta(days=15)
@@ -125,9 +130,9 @@ class DashboardService:
             "clientes_premiados": clientes_premiados,
             "clientes_inativos": clientes_inativos,
             "aniversariantes_mes": aniversariantes,
-            "total_points_distributed": total_points_distributed or 0,
-            "total_points_redeemed": total_points_redeemed or 0,
-            "total_points_circulation": total_points_circulation or 0,
+            "total_points_distributed": DashboardService._number(total_points_distributed),
+            "total_points_redeemed": DashboardService._number(total_points_redeemed),
+            "total_points_circulation": DashboardService._number(total_points_circulation),
             "pontos_alvo": max_pontos,
             "percentual_premiacao": 80
         }
@@ -156,7 +161,7 @@ class DashboardService:
                     "nome": c.nome,
                     "telefone": c.telefone,
                     "email": c.email,
-                    "pontos": c.pontos,
+                    "pontos": DashboardService._number(c.pontos),
                     "created_at": c.created_at
                 }
                 for c in clientes_inativos
@@ -192,7 +197,7 @@ class DashboardService:
                 "telefone": c.telefone,
                 "email": c.email,
                 "data_nascimento": str(c.data_nascimento),
-                "pontos": c.pontos,
+                "pontos": DashboardService._number(c.pontos),
                 "idade": datetime.now().year - c.data_nascimento.year if c.data_nascimento else None
             }
             for c in aniversariantes
@@ -226,7 +231,7 @@ class DashboardService:
                 "telefone": c.telefone,
                 "email": c.email,
                 "data_nascimento": str(c.data_nascimento),
-                "pontos": c.pontos,
+                "pontos": DashboardService._number(c.pontos),
                 "idade": datetime.now().year - c.data_nascimento.year if c.data_nascimento else None
             }
             for c in aniversariantes
@@ -245,7 +250,8 @@ class DashboardService:
         premiados = []
         for cliente in clientes:
             target = DashboardService._get_customer_points_target(cliente, default_target)
-            percentual = (cliente.pontos / target) * 100 if target > 0 else 0
+            pontos = DashboardService._number(cliente.pontos)
+            percentual = (pontos / target) * 100 if target > 0 else 0
 
             if percentual >= min_percentual:
                 premiados.append(DashboardService._build_customer_reward_data(cliente, target))
@@ -270,7 +276,7 @@ class DashboardService:
                 "nome": c.nome,
                 "telefone": c.telefone,
                 "email": c.email,
-                "pontos": c.pontos,
+                "pontos": DashboardService._number(c.pontos),
                 "created_at": c.created_at
             }
             for c in top_clientes
@@ -301,7 +307,7 @@ class DashboardService:
                 "product_id": row.product_id,
                 "produto": row.product_nome,
                 "quantidade": row.quantidade,
-                "pontos": row.pontos or 0
+                "pontos": DashboardService._number(row.pontos),
             }
             for row in rows
         ]
@@ -322,7 +328,7 @@ class DashboardService:
                 "id": t.id,
                 "product_id": t.product_id,
                 "produto": t.product_nome,
-                "pontos": t.pontos,
+                "pontos": DashboardService._number(t.pontos),
                 "descricao": t.descricao,
                 "created_at": t.created_at
             }
@@ -348,7 +354,8 @@ class DashboardService:
         quase_premiados = []
         for cliente in clientes:
             target = DashboardService._get_customer_points_target(cliente, default_target)
-            percentual = (cliente.pontos / target) * 100 if target > 0 else 0
+            pontos = DashboardService._number(cliente.pontos)
+            percentual = (pontos / target) * 100 if target > 0 else 0
 
             if percentual_min <= percentual < percentual_max:
                 quase_premiados.append(DashboardService._build_customer_reward_data(cliente, target))
@@ -371,7 +378,8 @@ class DashboardService:
         clientes_premiados = []
         for c in clientes:
             target = DashboardService._get_customer_points_target(c, default_target)
-            percentual = (c.pontos / target) * 100 if target > 0 else 0
+            pontos = DashboardService._number(c.pontos)
+            percentual = (pontos / target) * 100 if target > 0 else 0
 
             if percentual >= 100:
                 clientes_premiados.append({
@@ -380,11 +388,11 @@ class DashboardService:
                     "telefone": c.telefone,
                     "email": c.email,
                     "data_nascimento": str(c.data_nascimento) if c.data_nascimento else None,
-                    "pontos": c.pontos,
+                    "pontos": pontos,
                     "meta_pontos": target,
                     "percentual": round(percentual, 2),
                     "falta": 0,
-                    "valor_gasto_atual": c.valor_gasto_atual,
+                    "valor_gasto_atual": DashboardService._number(c.valor_gasto_atual),
                     "quantidade_produtos_comprados": c.quantidade_produtos_comprados,
                     "created_at": c.created_at
                 })
