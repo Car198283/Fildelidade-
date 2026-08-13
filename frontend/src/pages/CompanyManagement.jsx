@@ -25,6 +25,7 @@ export default function CompanyManagement() {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   const loadCompanies = async () => {
     const response = await adminService.companies();
@@ -48,6 +49,7 @@ export default function CompanyManagement() {
         estado: form.estado.toUpperCase(),
       });
       setForm(emptyForm);
+      setShowAdminPassword(false);
       setMessage("Empresa e administrador criados com sucesso.");
       await loadCompanies();
     } catch (error) {
@@ -258,16 +260,26 @@ export default function CompanyManagement() {
 
           <label>
             Senha temporaria *
-            <input
-              type="password"
-              placeholder="Minimo 6 caracteres"
-              value={form.admin_senha}
-              onChange={(event) =>
-                setForm({ ...form, admin_senha: event.target.value })
-              }
-              minLength={6}
-              required
-            />
+            <div className="password-field">
+              <input
+                type={showAdminPassword ? "text" : "password"}
+                placeholder="Minimo 6 caracteres"
+                value={form.admin_senha}
+                onChange={(event) =>
+                  setForm({ ...form, admin_senha: event.target.value })
+                }
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowAdminPassword(!showAdminPassword)}
+                title={showAdminPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showAdminPassword ? "Ocultar" : "Ver"}
+              </button>
+            </div>
           </label>
 
           <div className="company-form-actions">

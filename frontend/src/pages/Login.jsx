@@ -8,6 +8,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -69,14 +70,24 @@ export default function Login() {
             required
           />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Senha"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Senha"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showPassword ? "Ocultar" : "Ver"}
+            </button>
+          </div>
 
           <button type="submit" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}

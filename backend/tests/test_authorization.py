@@ -181,6 +181,23 @@ class AuthorizationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_admin_exclui_usuario_da_empresa(self):
+        response = self.client.delete(
+            f"/admin/users/{self.operator.id}",
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.db.refresh(self.operator)
+        self.assertFalse(self.operator.ativo)
+
+    def test_admin_nao_exclui_proprio_usuario(self):
+        response = self.client.delete(
+            f"/admin/users/{self.admin.id}",
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(response.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()

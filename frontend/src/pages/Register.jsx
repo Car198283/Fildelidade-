@@ -7,6 +7,7 @@ export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     companyName: "",
     email: "",
@@ -71,15 +72,25 @@ export default function Register() {
             required
           />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Senha"
-            value={form.password}
-            onChange={handleChange}
-            required
-            minLength="6"
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Senha"
+              value={form.password}
+              onChange={handleChange}
+              required
+              minLength="6"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showPassword ? "Ocultar" : "Ver"}
+            </button>
+          </div>
 
           <button type="submit" disabled={loading}>
             {loading ? "Registrando..." : "Registrar"}

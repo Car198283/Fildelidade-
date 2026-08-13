@@ -114,6 +114,30 @@
   background: #047857;
 }
 
+.password-field {
+  position: relative;
+  display: flex;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 78px;
+}
+
+.companies-panel .password-toggle {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .companies-list {
   display: grid;
   gap: 10px;

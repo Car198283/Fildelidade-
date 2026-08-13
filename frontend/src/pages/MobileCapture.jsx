@@ -32,7 +32,20 @@ function formatPoints(value) {
   return Number(value || 0).toLocaleString("pt-BR");
 }
 
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch {
+    return {};
+  }
+}
+
 export default function MobileCapture() {
+  const currentUser = getStoredUser();
+  const canOperateOnMobile =
+    currentUser.role === "operador_captura" ||
+    currentUser.role === "admin" ||
+    currentUser.role === "master";
   const [mode, setMode] = useState("clientes");
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -110,14 +123,36 @@ export default function MobileCapture() {
   };
 
   useEffect(() => {
+    if (!canOperateOnMobile) return;
     buscarClientes();
     carregarProdutos();
-  }, []);
+  }, [canOperateOnMobile]);
 
   useEffect(() => {
+    if (!canOperateOnMobile) return;
     if (mode === "premiados") carregarPremiados();
     if (mode === "aniversarios") carregarAniversariantes();
-  }, [mode]);
+  }, [canOperateOnMobile, mode]);
+
+  if (!canOperateOnMobile) {
+    return (
+      <div className="mobile-capture">
+        <div className="capture-header">
+          <div>
+            <h1>Acesso ao Celular</h1>
+            <p>Este usuario esta cadastrado como observador.</p>
+          </div>
+          <button type="button" className="mobile-logout" onClick={handleLogout}>
+            Sair
+          </button>
+        </div>
+
+        <div className="message">
+          Para usar o link do celular, cadastre o usuario como Operador de captura.
+        </div>
+      </div>
+    );
+  }
 
   const handleCreateCustomer = async (event) => {
     event.preventDefault();

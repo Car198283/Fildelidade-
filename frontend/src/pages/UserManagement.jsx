@@ -5,7 +5,7 @@ import "./UserManagement.css";
 const emptyForm = {
   email: "",
   senha: "",
-  role: "observador",
+  role: "operador_captura",
 };
 
 function getStoredUser() {
@@ -26,6 +26,8 @@ export default function UserManagement() {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const isMaster = currentUser.role === "master";
   const selectedCompany = companies.find(
@@ -70,25 +72,71 @@ export default function UserManagement() {
     setMessage("");
 
     try {
-      await adminService.createUser({
-        email: form.email,
-        senha: form.senha,
-        role: form.role,
-        company_id: isMaster ? Number(selectedCompanyId) : null,
-      });
+      if (editingUserId) {
+        const payload = {
+          role: form.role,
+          ativo: form.ativo,
+        };
+        if (form.senha) payload.senha = form.senha;
+        await adminService.updateUser(editingUserId, payload);
+        setEditingUserId(null);
+        setMessage("Usuario atualizado com sucesso.");
+      } else {
+        await adminService.createUser({
+          email: form.email,
+          senha: form.senha,
+          role: form.role,
+          company_id: isMaster ? Number(selectedCompanyId) : null,
+        });
+        setMessage("Usuario criado com sucesso.");
+      }
       setForm(emptyForm);
-      setMessage("Usuario criado com sucesso.");
+      setShowPassword(false);
       await loadUsers();
     } catch (error) {
-      setMessage(error.response?.data?.detail || "Nao foi possivel criar usuario.");
+      setMessage(error.response?.data?.detail || "Nao foi possivel salvar usuario.");
     } finally {
       setLoading(false);
     }
   };
 
+  const startEditUser = (user) => {
+    setEditingUserId(user.id);
+    setForm({
+      email: user.email,
+      senha: "",
+      role: user.role,
+      ativo: user.ativo,
+    });
+    setShowPassword(false);
+    setMessage("");
+  };
+
+  const cancelEditUser = () => {
+    setEditingUserId(null);
+    setForm(emptyForm);
+    setShowPassword(false);
+    setMessage("");
+  };
+
   const toggleUser = async (user) => {
     await adminService.updateUser(user.id, { ativo: !user.ativo });
     await loadUsers();
+  };
+
+  const deleteUser = async (user) => {
+    const confirmed = window.confirm(`Excluir o usuario ${user.email}?`);
+    if (!confirmed) return;
+
+    setMessage("");
+    try {
+      await adminService.deleteUser(user.id);
+      if (editingUserId === user.id) cancelEditUser();
+      await loadUsers();
+      setMessage("Usuario excluido com sucesso.");
+    } catch (error) {
+      setMessage(error.response?.data?.detail || "Nao foi possivel excluir usuario.");
+    }
   };
 
   const updateCompanyStatus = async (data) => {
@@ -160,33 +208,62 @@ export default function UserManagement() {
       )}
 
       <section className="users-panel">
-        <h2>Novo usuario</h2>
+        <h2>{editingUserId ? "Editar usuario" : "Novo usuario"}</h2>
         <form className="users-form" onSubmit={handleSubmit}>
           <input
             type="email"
             placeholder="Email"
             value={form.email}
             onChange={(event) => setForm({ ...form, email: event.target.value })}
+            disabled={Boolean(editingUserId)}
             required
           />
-          <input
-            type="password"
-            placeholder="Senha temporaria"
-            value={form.senha}
-            onChange={(event) => setForm({ ...form, senha: event.target.value })}
-            required
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder={editingUserId ? "Nova senha opcional" : "Senha temporaria"}
+              value={form.senha}
+              onChange={(event) => setForm({ ...form, senha: event.target.value })}
+              required={!editingUserId}
+              minLength={form.senha ? 6 : undefined}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            >
+              {showPassword ? "Ocultar" : "Ver"}
+            </button>
+          </div>
           <select
             value={form.role}
             onChange={(event) => setForm({ ...form, role: event.target.value })}
           >
-            <option value="observador">Observador</option>
             <option value="operador_captura">Operador de captura</option>
+            <option value="observador">Observador</option>
             <option value="admin">Administrador</option>
           </select>
+          {editingUserId && (
+            <select
+              value={form.ativo ? "true" : "false"}
+              onChange={(event) =>
+                setForm({ ...form, ativo: event.target.value === "true" })
+              }
+            >
+              <option value="true">Ativo</option>
+              <option value="false">Inativo</option>
+            </select>
+          )}
           <button type="submit" disabled={loading || (isMaster && !selectedCompanyId)}>
-            {loading ? "Criando..." : "Criar usuario"}
+            {loading ? "Salvando..." : editingUserId ? "Salvar alteracoes" : "Criar usuario"}
           </button>
+          {editingUserId && (
+            <button type="button" className="secondary" onClick={cancelEditUser}>
+              Cancelar
+            </button>
+          )}
         </form>
       </section>
 
@@ -198,10 +275,19 @@ export default function UserManagement() {
               <div>
                 <strong>{user.email}</strong>
                 <span>{user.role}</span>
+                <span>{user.ativo ? "Ativo" : "Inativo"}</span>
               </div>
-              <button type="button" onClick={() => toggleUser(user)}>
-                {user.ativo ? "Desativar" : "Ativar"}
-              </button>
+              <div className="user-actions">
+                <button type="button" onClick={() => startEditUser(user)}>
+                  Editar
+                </button>
+                <button type="button" onClick={() => toggleUser(user)}>
+                  {user.ativo ? "Desativar" : "Ativar"}
+                </button>
+                <button type="button" className="danger" onClick={() => deleteUser(user)}>
+                  Excluir
+                </button>
+              </div>
             </article>
           ))}
         </div>
