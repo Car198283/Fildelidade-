@@ -40,7 +40,9 @@ export default function Login() {
       if (nextPath?.startsWith("/")) {
         navigate(nextPath === "/celular" ? "/captura" : nextPath);
       } else {
-        navigate(response.data.data.role === "observador" ? "/captura" : "/dashboard");
+        const canUseDashboard =
+          response.data.data.role === "admin" || response.data.data.role === "master";
+        navigate(canUseDashboard ? "/dashboard" : "/captura");
       }
     } catch (err) {
       setError(err.response?.data?.detail || "Email ou senha incorretos");

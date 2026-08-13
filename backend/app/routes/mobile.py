@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Customer, User, PointsTransaction
 from app.schemas.schemas import CustomerCreate, PointsTransactionCreate
-from app.utils.dependencies import get_current_user, get_writable_company_id
+from app.utils.dependencies import get_current_user, get_writable_company_id, require_capture_operator, require_points_write_access
 from datetime import datetime
 
 router = APIRouter(prefix="/mobile", tags=["Mobile"])
@@ -15,7 +15,7 @@ def registrar_cliente_mobile(
     email: str = Query(None),
     data_nascimento: str = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_capture_operator),
     company_id: int = Depends(get_writable_company_id)
 ):
     """
@@ -136,7 +136,7 @@ def lancar_pontos_por_telefone(
     pontos: float = Query(..., gt=0),
     descricao: str = Query(None, max_length=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_points_write_access),
     company_id: int = Depends(get_writable_company_id)
 ):
     """
@@ -201,7 +201,7 @@ def resgatar_pontos_por_telefone(
     pontos: float = Query(..., gt=0),
     descricao: str = Query(None, max_length=500),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_points_write_access),
     company_id: int = Depends(get_writable_company_id)
 ):
     """

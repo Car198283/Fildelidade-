@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.schemas import WhatsAppMessageStatusUpdate, WhatsAppQueueGenerate
 from app.services.whatsapp_service import WhatsAppService
-from app.utils.dependencies import get_current_user, get_writable_company_id
+from app.utils.dependencies import get_writable_company_id, require_admin_or_master
 
 router = APIRouter(prefix="/integracoes/n8n", tags=["Integracoes n8n"])
 
@@ -30,7 +30,7 @@ def _message_to_dict(message):
 def gerar_fila_whatsapp(
     body: WhatsAppQueueGenerate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
     company_id: int = Depends(get_writable_company_id),
 ):
     """Gera mensagens pendentes para o n8n enviar por WhatsApp."""
@@ -60,7 +60,7 @@ def gerar_fila_whatsapp(
 def listar_pendentes_whatsapp(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
 ):
     """Lista mensagens pendentes para o n8n consumir."""
 
@@ -77,7 +77,7 @@ def atualizar_status_whatsapp(
     message_id: int,
     body: WhatsAppMessageStatusUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin_or_master),
     company_id: int = Depends(get_writable_company_id),
 ):
     """Marca mensagem como enviada, erro, cancelada etc."""

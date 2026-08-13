@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Company, User
-from app.schemas.schemas import ManagedCompanyUpdate, ManagedUserCreate, ManagedUserUpdate
+from app.schemas.schemas import ManagedCompanyCreate, ManagedCompanyUpdate, ManagedUserCreate, ManagedUserUpdate
 from app.services.auth_service import AuthService
 from app.utils.dependencies import (
+    ROLE_ADMIN,
     ROLE_MASTER,
     get_current_user,
     is_master,
@@ -20,6 +21,18 @@ def serialize_company(company: Company) -> dict:
     return {
         "id": company.id,
         "nome": company.nome,
+        "razao_social": company.razao_social,
+        "cnpj": company.cnpj,
+        "telefone": company.telefone,
+        "email": company.email,
+        "responsavel": company.responsavel,
+        "cep": company.cep,
+        "endereco": company.endereco,
+        "numero": company.numero,
+        "bairro": company.bairro,
+        "cidade": company.cidade,
+        "estado": company.estado,
+        "logotipo": company.logotipo,
         "plano": company.plano,
         "ativo": company.ativo,
         "read_only": company.read_only,
@@ -57,6 +70,61 @@ def listar_empresas(
     return {"success": True, "data": [serialize_company(company) for company in empresas]}
 
 
+@router.post("/companies", status_code=status.HTTP_201_CREATED)
+def criar_empresa(
+    body: ManagedCompanyCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_master),
+):
+    existing_user = db.query(User).filter(User.email == body.admin_email).first()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email do administrador ja cadastrado")
+
+    existing_company = db.query(Company).filter(Company.cnpj == body.cnpj).first()
+    if existing_company:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CNPJ ja cadastrado")
+
+    company = Company(
+        nome=body.nome,
+        razao_social=body.razao_social,
+        cnpj=body.cnpj,
+        telefone=body.telefone,
+        email=str(body.email),
+        responsavel=body.responsavel,
+        cep=body.cep,
+        endereco=body.endereco,
+        numero=body.numero,
+        bairro=body.bairro,
+        cidade=body.cidade,
+        estado=body.estado.upper() if body.estado else None,
+        logotipo=body.logotipo,
+        plano=body.plano,
+        ativo=True,
+        read_only=False,
+    )
+    db.add(company)
+    db.flush()
+
+    user = User(
+        email=body.admin_email,
+        senha_hash=AuthService.hash_password(body.admin_senha),
+        company_id=company.id,
+        role=ROLE_ADMIN,
+        ativo=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(company)
+
+    return {
+        "success": True,
+        "data": {
+            "company": serialize_company(company),
+            "admin": serialize_user(user),
+        },
+    }
+
+
 @router.put("/companies/{company_id}")
 def atualizar_empresa(
     company_id: int,
@@ -82,6 +150,39 @@ def atualizar_empresa(
         if body.read_only and not company.ativo:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empresa bloqueada nao pode ficar somente leitura")
         company.read_only = body.read_only
+
+    text_fields = [
+        "razao_social",
+        "nome",
+        "cnpj",
+        "telefone",
+        "email",
+        "responsavel",
+        "cep",
+        "endereco",
+        "numero",
+        "bairro",
+        "cidade",
+        "estado",
+        "logotipo",
+        "plano",
+    ]
+    for field in text_fields:
+        value = getattr(body, field)
+        if value is not None:
+            if field == "cnpj":
+                existing_company = (
+                    db.query(Company)
+                    .filter(Company.cnpj == value, Company.id != company.id)
+                    .first()
+                )
+                if existing_company:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="CNPJ ja cadastrado")
+            if field == "estado":
+                value = value.upper()
+            if field == "email":
+                value = str(value)
+            setattr(company, field, value)
 
     db.commit()
     db.refresh(company)

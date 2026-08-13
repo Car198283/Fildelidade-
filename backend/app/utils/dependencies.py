@@ -10,8 +10,9 @@ security = HTTPBearer()
 
 ROLE_MASTER = "master"
 ROLE_ADMIN = "admin"
+ROLE_CAPTURE_OPERATOR = "operador_captura"
 ROLE_OBSERVER = "observador"
-ALL_ROLES = {ROLE_MASTER, ROLE_ADMIN, ROLE_OBSERVER}
+ALL_ROLES = {ROLE_MASTER, ROLE_ADMIN, ROLE_CAPTURE_OPERATOR, ROLE_OBSERVER}
 
 
 def normalize_role(role: str) -> str:
@@ -65,7 +66,10 @@ def require_roles(*roles: str):
 
 require_master = require_roles(ROLE_MASTER)
 require_admin_or_master = require_roles(ROLE_ADMIN, ROLE_MASTER)
-require_operator_or_above = require_roles(ROLE_OBSERVER, ROLE_ADMIN, ROLE_MASTER)
+require_capture_operator = require_roles(ROLE_CAPTURE_OPERATOR, ROLE_ADMIN, ROLE_MASTER)
+require_read_access = require_roles(ROLE_OBSERVER, ROLE_CAPTURE_OPERATOR, ROLE_ADMIN, ROLE_MASTER)
+require_points_write_access = require_roles(ROLE_CAPTURE_OPERATOR, ROLE_ADMIN, ROLE_MASTER)
+require_operator_or_above = require_read_access
 
 
 def get_effective_company_id(

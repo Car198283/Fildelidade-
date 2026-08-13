@@ -4,7 +4,12 @@ from sqlalchemy import func, or_, text
 from app.database import get_db
 from app.models import Company, Customer, PointsTransaction, User
 from app.schemas.schemas import CustomerCreate, CustomerUpdate, CustomerResponse, PublicCustomerRegistration
-from app.utils.dependencies import get_current_user, get_effective_company_id, get_writable_company_id, require_admin_or_master
+from app.utils.dependencies import (
+    get_effective_company_id,
+    get_writable_company_id,
+    require_admin_or_master,
+    require_capture_operator,
+)
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/clientes", tags=["Customers"])
@@ -13,6 +18,7 @@ router = APIRouter(prefix="/clientes", tags=["Customers"])
 def criar_cliente(
     body: CustomerCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_capture_operator),
     company_id: int = Depends(get_writable_company_id)
 ):
     """Cria novo cliente"""

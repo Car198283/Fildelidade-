@@ -7,9 +7,39 @@ from datetime import datetime, date
 class CompanyBase(BaseModel):
     nome: str
     plano: str = "free"
+    razao_social: Optional[str] = None
+    cnpj: Optional[str] = None
+    telefone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    responsavel: Optional[str] = None
+    cep: Optional[str] = None
+    endereco: Optional[str] = None
+    numero: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
+    logotipo: Optional[str] = None
 
 class CompanyCreate(CompanyBase):
     pass
+
+class ManagedCompanyCreate(BaseModel):
+    razao_social: str = Field(..., min_length=1, max_length=255)
+    nome: str = Field(..., min_length=1, max_length=255)
+    cnpj: str = Field(..., min_length=1, max_length=30)
+    telefone: str = Field(..., min_length=1, max_length=30)
+    email: EmailStr
+    responsavel: str = Field(..., min_length=1, max_length=255)
+    cep: Optional[str] = Field(None, max_length=20)
+    endereco: Optional[str] = Field(None, max_length=255)
+    numero: Optional[str] = Field(None, max_length=30)
+    bairro: Optional[str] = Field(None, max_length=120)
+    cidade: Optional[str] = Field(None, max_length=120)
+    estado: Optional[str] = Field(None, max_length=2)
+    logotipo: Optional[str] = Field(None, max_length=500)
+    plano: str = Field("free", max_length=50)
+    admin_email: EmailStr
+    admin_senha: str = Field(..., min_length=6, max_length=72)
 
 class CompanyResponse(CompanyBase):
     id: int
@@ -32,17 +62,31 @@ class UserCreate(UserBase):
 class ManagedUserCreate(BaseModel):
     email: EmailStr
     senha: str = Field(..., min_length=6, max_length=72)
-    role: str = Field("observador", pattern="^(admin|observador)$")
+    role: str = Field("observador", pattern="^(admin|operador_captura|observador)$")
     company_id: Optional[int] = None
 
 class ManagedUserUpdate(BaseModel):
-    role: Optional[str] = Field(None, pattern="^(admin|observador)$")
+    role: Optional[str] = Field(None, pattern="^(admin|operador_captura|observador)$")
     ativo: Optional[bool] = None
     senha: Optional[str] = Field(None, min_length=6, max_length=72)
 
 class ManagedCompanyUpdate(BaseModel):
     ativo: Optional[bool] = None
     read_only: Optional[bool] = None
+    razao_social: Optional[str] = Field(None, min_length=1, max_length=255)
+    nome: Optional[str] = Field(None, min_length=1, max_length=255)
+    cnpj: Optional[str] = Field(None, min_length=1, max_length=30)
+    telefone: Optional[str] = Field(None, min_length=1, max_length=30)
+    email: Optional[EmailStr] = None
+    responsavel: Optional[str] = Field(None, min_length=1, max_length=255)
+    cep: Optional[str] = Field(None, max_length=20)
+    endereco: Optional[str] = Field(None, max_length=255)
+    numero: Optional[str] = Field(None, max_length=30)
+    bairro: Optional[str] = Field(None, max_length=120)
+    cidade: Optional[str] = Field(None, max_length=120)
+    estado: Optional[str] = Field(None, max_length=2)
+    logotipo: Optional[str] = Field(None, max_length=500)
+    plano: Optional[str] = Field(None, max_length=50)
 
 class UserLogin(BaseModel):
     email: EmailStr

@@ -26,7 +26,7 @@
   margin-bottom: 18px;
   padding: 20px;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -45,16 +45,38 @@
 
 .company-form {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) minmax(220px, 1.8fr) minmax(
-      180px,
-      1.2fr
-    ) auto;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.company-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.company-form .wide-field,
+.form-section-title,
+.company-form-actions {
+  grid-column: 1 / -1;
+}
+
+.form-section-title {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f5;
+  color: #111827;
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .companies-panel input,
 .companies-panel button {
-  min-height: 44px;
+  min-height: 42px;
   padding: 10px 12px;
   border: 1px solid #dbe1ea;
   border-radius: 8px;
@@ -64,10 +86,19 @@
 
 .companies-panel button {
   border: 0;
-  background: #4f46e5;
+  background: #2563eb;
   color: #fff;
   font-weight: 800;
   cursor: pointer;
+}
+
+.company-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.company-form-actions button {
+  min-width: 180px;
 }
 
 .companies-panel button:disabled {
@@ -90,7 +121,7 @@
 
 .company-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.5fr) auto auto;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(220px, 1.2fr) auto auto;
   gap: 12px;
   align-items: center;
   padding: 14px;
@@ -105,9 +136,18 @@
   gap: 4px;
 }
 
+.company-contact {
+  display: grid;
+  gap: 4px;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
 .company-main strong,
-.company-main span {
+.company-main span,
+.company-contact span {
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .company-main strong {
@@ -156,6 +196,12 @@
 .status-readonly {
   background: #fef3c7;
   color: #92400e;
+}
+
+.status-plan {
+  background: #e0f2fe;
+  color: #075985;
+  text-transform: capitalize;
 }
 
 .company-row-actions {

@@ -54,12 +54,29 @@ def ensure_runtime_schema():
     table_names = inspector.get_table_names()
     if "companies" in table_names:
         company_columns = {column["name"] for column in inspector.get_columns("companies")}
+        company_extra_columns = {
+            "razao_social": "VARCHAR(255)",
+            "cnpj": "VARCHAR(30)",
+            "telefone": "VARCHAR(30)",
+            "email": "VARCHAR(255)",
+            "responsavel": "VARCHAR(255)",
+            "cep": "VARCHAR(20)",
+            "endereco": "VARCHAR(255)",
+            "numero": "VARCHAR(30)",
+            "bairro": "VARCHAR(120)",
+            "cidade": "VARCHAR(120)",
+            "estado": "VARCHAR(2)",
+            "logotipo": "VARCHAR(500)",
+        }
         with engine.begin() as conn:
             if "read_only" not in company_columns:
                 if engine.dialect.name == "postgresql":
                     conn.execute(text("ALTER TABLE companies ADD COLUMN read_only BOOLEAN NOT NULL DEFAULT false"))
                 else:
                     conn.execute(text("ALTER TABLE companies ADD COLUMN read_only BOOLEAN NOT NULL DEFAULT 0"))
+            for column_name, column_type in company_extra_columns.items():
+                if column_name not in company_columns:
+                    conn.execute(text(f"ALTER TABLE companies ADD COLUMN {column_name} {column_type}"))
 
     if "points_transactions" not in table_names:
         return

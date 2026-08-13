@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
-import { adminService, authService } from "../services";
+import { adminService } from "../services";
 import "./CompanyManagement.css";
 
 const emptyForm = {
-  companyName: "",
+  razao_social: "",
+  nome: "",
+  cnpj: "",
+  telefone: "",
   email: "",
-  password: "",
+  responsavel: "",
+  cep: "",
+  endereco: "",
+  numero: "",
+  bairro: "",
+  cidade: "",
+  estado: "",
+  logotipo: "",
+  admin_email: "",
+  admin_senha: "",
 };
 
 export default function CompanyManagement() {
@@ -31,9 +43,12 @@ export default function CompanyManagement() {
     setMessage("");
 
     try {
-      await authService.register(form.companyName, form.email, form.password);
+      await adminService.createCompany({
+        ...form,
+        estado: form.estado.toUpperCase(),
+      });
       setForm(emptyForm);
-      setMessage("Empresa criada com sucesso.");
+      setMessage("Empresa e administrador criados com sucesso.");
       await loadCompanies();
     } catch (error) {
       setMessage(
@@ -69,37 +84,197 @@ export default function CompanyManagement() {
       <section className="companies-panel">
         <h2>Nova empresa</h2>
         <form className="company-form" onSubmit={handleCreateCompany}>
-          <input
-            type="text"
-            placeholder="Nome da empresa"
-            value={form.companyName}
-            onChange={(event) =>
-              setForm({ ...form, companyName: event.target.value })
-            }
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email do administrador"
-            value={form.email}
-            onChange={(event) =>
-              setForm({ ...form, email: event.target.value })
-            }
-            required
-          />
-          <input
-            type="password"
-            placeholder="Senha temporaria"
-            value={form.password}
-            onChange={(event) =>
-              setForm({ ...form, password: event.target.value })
-            }
-            minLength={6}
-            required
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? "Criando..." : "Criar empresa"}
-          </button>
+          <label>
+            Razao social *
+            <input
+              type="text"
+              placeholder="Barcellos Gelataria LTDA"
+              value={form.razao_social}
+              onChange={(event) =>
+                setForm({ ...form, razao_social: event.target.value })
+              }
+              required
+            />
+          </label>
+
+          <label>
+            Nome fantasia *
+            <input
+              type="text"
+              placeholder="Barcellos Gelataria"
+              value={form.nome}
+              onChange={(event) => setForm({ ...form, nome: event.target.value })}
+              required
+            />
+          </label>
+
+          <label>
+            CNPJ *
+            <input
+              type="text"
+              placeholder="12.345.678/0001-90"
+              value={form.cnpj}
+              onChange={(event) => setForm({ ...form, cnpj: event.target.value })}
+              required
+            />
+          </label>
+
+          <label>
+            Telefone *
+            <input
+              type="tel"
+              placeholder="(32) 99999-9999"
+              value={form.telefone}
+              onChange={(event) =>
+                setForm({ ...form, telefone: event.target.value })
+              }
+              required
+            />
+          </label>
+
+          <label>
+            E-mail da empresa *
+            <input
+              type="email"
+              placeholder="contato@barcellos.com.br"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              required
+            />
+          </label>
+
+          <label>
+            Responsavel *
+            <input
+              type="text"
+              placeholder="Carlos Eduardo"
+              value={form.responsavel}
+              onChange={(event) =>
+                setForm({ ...form, responsavel: event.target.value })
+              }
+              required
+            />
+          </label>
+
+          <div className="form-section-title">Endereco</div>
+
+          <label>
+            CEP
+            <input
+              type="text"
+              placeholder="36000-000"
+              value={form.cep}
+              onChange={(event) => setForm({ ...form, cep: event.target.value })}
+            />
+          </label>
+
+          <label className="wide-field">
+            Endereco
+            <input
+              type="text"
+              placeholder="Rua Exemplo"
+              value={form.endereco}
+              onChange={(event) =>
+                setForm({ ...form, endereco: event.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            Numero
+            <input
+              type="text"
+              placeholder="100"
+              value={form.numero}
+              onChange={(event) =>
+                setForm({ ...form, numero: event.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            Bairro
+            <input
+              type="text"
+              placeholder="Centro"
+              value={form.bairro}
+              onChange={(event) =>
+                setForm({ ...form, bairro: event.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            Cidade
+            <input
+              type="text"
+              placeholder="Juiz de Fora"
+              value={form.cidade}
+              onChange={(event) =>
+                setForm({ ...form, cidade: event.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            Estado
+            <input
+              type="text"
+              placeholder="MG"
+              maxLength={2}
+              value={form.estado}
+              onChange={(event) =>
+                setForm({ ...form, estado: event.target.value.toUpperCase() })
+              }
+            />
+          </label>
+
+          <label className="wide-field">
+            Logotipo
+            <input
+              type="text"
+              placeholder="URL ou nome do arquivo"
+              value={form.logotipo}
+              onChange={(event) =>
+                setForm({ ...form, logotipo: event.target.value })
+              }
+            />
+          </label>
+
+          <div className="form-section-title">Administrador inicial</div>
+
+          <label>
+            E-mail do usuario *
+            <input
+              type="email"
+              placeholder="admin@barcellos.com.br"
+              value={form.admin_email}
+              onChange={(event) =>
+                setForm({ ...form, admin_email: event.target.value })
+              }
+              required
+            />
+          </label>
+
+          <label>
+            Senha temporaria *
+            <input
+              type="password"
+              placeholder="Minimo 6 caracteres"
+              value={form.admin_senha}
+              onChange={(event) =>
+                setForm({ ...form, admin_senha: event.target.value })
+              }
+              minLength={6}
+              required
+            />
+          </label>
+
+          <div className="company-form-actions">
+            <button type="submit" disabled={loading}>
+              {loading ? "Criando..." : "Criar empresa"}
+            </button>
+          </div>
         </form>
       </section>
 
@@ -113,10 +288,22 @@ export default function CompanyManagement() {
               <article className="company-row" key={company.id}>
                 <div className="company-main">
                   <strong>{company.nome}</strong>
-                  <span>{company.plano || "free"}</span>
+                  <span>{company.razao_social || "Razao social nao informada"}</span>
+                  <span>{company.cnpj || "CNPJ nao informado"}</span>
+                </div>
+
+                <div className="company-contact">
+                  <span>{company.responsavel || "Responsavel nao informado"}</span>
+                  <span>{company.telefone || "Telefone nao informado"}</span>
+                  <span>{company.email || "Email nao informado"}</span>
+                  <span>
+                    {[company.cidade, company.estado].filter(Boolean).join(" - ") ||
+                      "Cidade nao informada"}
+                  </span>
                 </div>
 
                 <div className="company-meta">
+                  <span className="status-plan">{company.plano || "free"}</span>
                   <span
                     className={
                       company.ativo ? "status-active" : "status-blocked"

@@ -181,6 +181,7 @@ export default function UserManagement() {
             onChange={(event) => setForm({ ...form, role: event.target.value })}
           >
             <option value="observador">Observador</option>
+            <option value="operador_captura">Operador de captura</option>
             <option value="admin">Administrador</option>
           </select>
           <button type="submit" disabled={loading || (isMaster && !selectedCompanyId)}>
