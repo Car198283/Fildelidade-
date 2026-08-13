@@ -17,6 +17,7 @@ import Products from "./pages/Products";
 import MobileCapture from "./pages/MobileCapture";
 import PromotionConfig from "./pages/PromotionConfig";
 import UserManagement from "./pages/UserManagement";
+import CompanyManagement from "./pages/CompanyManagement";
 
 import "./App.css";
 
@@ -39,7 +40,9 @@ function PrivateRoute({ children, roles = [] }) {
   const mobileCaptureOnly = localStorage.getItem("mobileCaptureOnly") === "1";
 
   if (!token) {
-    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />;
+    return (
+      <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />
+    );
   }
 
   if (mobileCaptureOnly && location.pathname !== "/captura") {
@@ -47,7 +50,8 @@ function PrivateRoute({ children, roles = [] }) {
   }
 
   if (roles.length && !roles.includes(user.role)) {
-    return <Navigate to={user.role === "observador" ? "/captura" : "/dashboard"} />;
+    const canUseDashboard = user.role === "admin" || user.role === "master";
+    return <Navigate to={canUseDashboard ? "/dashboard" : "/captura"} />;
   }
 
   return children;
@@ -57,6 +61,7 @@ function ProtectedLayout({ children }) {
   const [showMenu, setShowMenu] = useState(false);
   const user = getStoredUser();
   const canManage = user.role === "admin" || user.role === "master";
+  const isMaster = user.role === "master";
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -88,6 +93,7 @@ function ProtectedLayout({ children }) {
             {canManage && <a href="/products">Produtos</a>}
             {canManage && <a href="/promotion-config">Promocao</a>}
             {canManage && <a href="/usuarios">Usuarios</a>}
+            {isMaster && <a href="/empresas">Empresas</a>}
             <a href="/captura" className="capture-link">
               Captura
             </a>
@@ -187,6 +193,17 @@ export default function App() {
             <PrivateRoute roles={["admin", "master"]}>
               <ProtectedLayout>
                 <UserManagement />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/empresas"
+          element={
+            <PrivateRoute roles={["master"]}>
+              <ProtectedLayout>
+                <CompanyManagement />
               </ProtectedLayout>
             </PrivateRoute>
           }
