@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -210,6 +210,7 @@ def atualizar_empresa(
 @router.delete("/companies/{company_id}")
 def excluir_empresa(
     company_id: int,
+    force: bool = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_master),
 ):
@@ -227,20 +228,21 @@ def excluir_empresa(
         is not None
     )
     if has_transactions:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empresa possui movimentacoes. Altere o status para bloqueada em vez de excluir.",
-        )
+        if not force:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Empresa possui movimentacoes. Escolha bloquear ou confirme excluir empresa e todos os dados.",
+            )
 
     has_data = (
         db.query(Customer.id).filter(Customer.company_id == company_id).first()
         or db.query(Product.id).filter(Product.company_id == company_id).first()
         or db.query(WhatsAppMessage.id).filter(WhatsAppMessage.company_id == company_id).first()
     )
-    if has_data:
+    if has_data and not force:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empresa possui dados cadastrados. Altere o status para bloqueada em vez de excluir.",
+            detail="Empresa possui dados cadastrados. Escolha bloquear ou confirme excluir empresa e todos os dados.",
         )
 
     db.delete(company)

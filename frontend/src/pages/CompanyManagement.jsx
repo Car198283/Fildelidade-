@@ -117,15 +117,33 @@ export default function CompanyManagement() {
   };
 
   const deleteCompany = async (company) => {
-    const confirmed = window.confirm(`Excluir a empresa ${company.nome}?`);
+    const shouldBlock = window.confirm(
+      `Deseja bloquear a empresa ${company.nome}?\n\nClique em OK para bloquear.\nClique em Cancelar para escolher excluir definitivamente.`,
+    );
+    if (shouldBlock) {
+      await updateCompanyStatus(company, { ativo: false });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Excluir definitivamente a empresa ${company.nome} e TODOS os dados dela?\n\nIsso apaga usuarios, clientes, produtos, pontos, mensagens e configuracoes. Esta acao nao pode ser desfeita.`,
+    );
     if (!confirmed) return;
+
+    const typedName = window.prompt(
+      `Para confirmar, digite o nome da empresa exatamente:\n${company.nome}`,
+    );
+    if (typedName !== company.nome) {
+      setMessage("Exclusao cancelada. Nome da empresa nao confere.");
+      return;
+    }
 
     setMessage("");
     try {
-      await adminService.deleteCompany(company.id);
+      await adminService.deleteCompany(company.id, true);
       if (editingCompanyId === company.id) cancelEditCompany();
       await loadCompanies();
-      setMessage("Empresa excluida com sucesso.");
+      setMessage("Empresa e dados excluidos com sucesso.");
     } catch (error) {
       setMessage(
         error.response?.data?.detail || "Nao foi possivel excluir a empresa.",
@@ -448,7 +466,7 @@ export default function CompanyManagement() {
                     className="danger"
                     onClick={() => deleteCompany(company)}
                   >
-                    Excluir
+                    Excluir/Bloquear
                   </button>
                 </div>
               </article>

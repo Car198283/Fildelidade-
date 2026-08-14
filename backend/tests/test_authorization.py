@@ -181,6 +181,27 @@ class AuthorizationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_master_exclui_empresa_com_dados_quando_confirmado(self):
+        company_id = self.company.id
+        customer_id = self.customer.id
+        transaction = PointsTransaction(
+            customer_id=customer_id,
+            company_id=company_id,
+            pontos=1,
+            tipo="entrada",
+            descricao="Teste",
+        )
+        self.db.add(transaction)
+        self.db.commit()
+
+        response = self.client.delete(
+            f"/admin/companies/{company_id}?force=true",
+            headers=self._headers(self.master),
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(self.db.query(Company).filter(Company.id == company_id).first())
+        self.assertIsNone(self.db.query(Customer).filter(Customer.id == customer_id).first())
+
     def test_master_exclui_empresa_sem_movimentacao(self):
         create_response = self.client.post(
             "/admin/companies",

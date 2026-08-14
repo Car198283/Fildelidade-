@@ -23,7 +23,8 @@ export const adminService = {
 
   updateCompany: (id, data) => api.put(`/admin/companies/${id}`, data),
 
-  deleteCompany: (id) => api.delete(`/admin/companies/${id}`),
+  deleteCompany: (id, force = false) =>
+    api.delete(`/admin/companies/${id}`, { params: { force } }),
 
   users: (companyId = null) =>
     api.get("/admin/users", { params: { company_id: companyId } }),
