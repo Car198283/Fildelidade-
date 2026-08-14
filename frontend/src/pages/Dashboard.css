@@ -25,6 +25,26 @@
   color: #64748b;
 }
 
+.company-view-select {
+  min-height: 34px;
+  min-width: 220px;
+  max-width: 100%;
+  margin-left: 4px;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font: inherit;
+  font-weight: 800;
+}
+
+.company-view-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+}
+
 .dashboard-status {
   display: inline-flex;
   align-items: center;
@@ -473,4 +493,15 @@ table tr:hover {
 
 .btn.btn-primary:hover {
   background: #1976d2;
+}
+
+@media (max-width: 760px) {
+  .dashboard-heading {
+    flex-direction: column;
+  }
+
+  .company-view-select {
+    width: 100%;
+    margin: 8px 0 0;
+  }
 }

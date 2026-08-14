@@ -11,6 +11,10 @@ export default function Dashboard() {
   );
   const [clientesQuasePremiados, setClientesQuasePremiados] = useState([]);
   const [currentCompany, setCurrentCompany] = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState(
+    localStorage.getItem("selectedCompanyId") || "",
+  );
   const [loading, setLoading] = useState(true);
   const [editingCliente, setEditingCliente] = useState(null);
   const [formData, setFormData] = useState({
@@ -21,10 +25,38 @@ export default function Dashboard() {
   });
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const companyRequest =
-        user.role === "master" ? adminService.companies() : adminService.me();
+      let companyRequest = adminService.me();
+
+      if (user.role === "master") {
+        const companiesRes = await adminService.companies();
+        const companyList = companiesRes.data?.data || [];
+        const storedCompanyId =
+          localStorage.getItem("selectedCompanyId") || selectedCompanyId;
+        const selectedCompany =
+          companyList.find(
+            (company) =>
+              company.ativo && String(company.id) === String(storedCompanyId),
+          ) ||
+          companyList.find((company) => company.ativo) ||
+          companyList[0] ||
+          null;
+
+        setCompanies(companyList);
+        setCurrentCompany(selectedCompany);
+
+        if (selectedCompany) {
+          const nextCompanyId = String(selectedCompany.id);
+          setSelectedCompanyId(nextCompanyId);
+          localStorage.setItem("selectedCompanyId", nextCompanyId);
+        } else {
+          localStorage.removeItem("selectedCompanyId");
+        }
+
+        companyRequest = Promise.resolve(companiesRes);
+      }
 
       const [statsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.all([
         dashboardService.stats(),
@@ -42,10 +74,10 @@ export default function Dashboard() {
       setClientesQuasePremiados(quaseRes.data.data);
 
       if (user.role === "master") {
-        const selectedCompanyId = localStorage.getItem("selectedCompanyId") || user.company_id;
         const companies = companyRes.data?.data || [];
+        setCompanies(companies);
         setCurrentCompany(
-          companies.find((company) => String(company.id) === String(selectedCompanyId)) || null,
+          companies.find((company) => String(company.id) === localStorage.getItem("selectedCompanyId")) || null,
         );
       } else {
         const me = companyRes.data?.data || {};
@@ -65,6 +97,16 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const handleCompanyChange = (event) => {
+    const companyId = event.target.value;
+    setSelectedCompanyId(companyId);
+    localStorage.setItem("selectedCompanyId", companyId);
+    setCurrentCompany(
+      companies.find((company) => String(company.id) === String(companyId)) || null,
+    );
+    fetchDashboardData();
+  };
 
   const abrirEdicao = async (clienteId) => {
     try {
@@ -156,6 +198,8 @@ export default function Dashboard() {
   if (loading) return <div className="loading">Carregando...</div>;
 
   const totalClientes = stats?.total_clientes ?? stats?.total_customers ?? 0;
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isMaster = user.role === "master";
 
   return (
     <div className="dashboard">
@@ -164,7 +208,21 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <p>
             Empresa em visualizacao:{" "}
-            <strong>{currentCompany?.nome || "Nao identificada"}</strong>
+            {isMaster ? (
+              <select
+                className="company-view-select"
+                value={selectedCompanyId}
+                onChange={handleCompanyChange}
+              >
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id} disabled={!company.ativo}>
+                    {company.nome}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <strong>{currentCompany?.nome || "Nao identificada"}</strong>
+            )}
           </p>
         </div>
         {currentCompany?.read_only && (
