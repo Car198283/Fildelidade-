@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { customerService } from "../services";
 import API_URL from "../config";
+import { birthdayInputToApi, formatBirthdayInput } from "../utils/dateInput";
 import "./CustomerRegistration.css";
 
 const emptyForm = {
@@ -44,7 +45,7 @@ export default function CustomerRegistration() {
         nome: form.nome.trim(),
         telefone: form.telefone.trim() || null,
         email: form.email.trim() || null,
-        data_nascimento: form.data_nascimento || null,
+        data_nascimento: birthdayInputToApi(form.data_nascimento),
         token,
       });
       setMessage("Cadastro concluido! Agora voce ja faz parte do programa de fidelidade.");
@@ -98,10 +99,16 @@ export default function CustomerRegistration() {
           <label>
             Data de nascimento
             <input
-              type="date"
+              type="text"
+              inputMode="numeric"
+              maxLength="10"
+              placeholder="dd/mm/aaaa"
               value={form.data_nascimento}
               onChange={(event) =>
-                setForm({ ...form, data_nascimento: event.target.value })
+                setForm({
+                  ...form,
+                  data_nascimento: formatBirthdayInput(event.target.value),
+                })
               }
             />
           </label>

@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import { customerService } from "../services";
+import {
+  birthdayInputToApi,
+  formatBirthdayInput,
+  normalizeBirthdayForInput,
+} from "../utils/dateInput";
 import "./Customers.css";
 
 export default function Customers() {
@@ -38,7 +43,10 @@ export default function Customers() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await customerService.create(form);
+      await customerService.create({
+        ...form,
+        data_nascimento: birthdayInputToApi(form.data_nascimento),
+      });
       setForm({ nome: "", telefone: "", email: "", data_nascimento: "" }); // ATUALIZADO
       setShowForm(false);
       setPage(1);
@@ -56,7 +64,7 @@ export default function Customers() {
         nome: res.data.data.nome,
         telefone: res.data.data.telefone || "",
         email: res.data.data.email || "",
-        data_nascimento: res.data.data.data_nascimento || "",
+        data_nascimento: normalizeBirthdayForInput(res.data.data.data_nascimento),
       });
       setShowEditModal(true);
     } catch (err) {
@@ -68,7 +76,10 @@ export default function Customers() {
   const salvarEdicao = async (e) => {
     e.preventDefault();
     try {
-      await customerService.update(editingId, form);
+      await customerService.update(editingId, {
+        ...form,
+        data_nascimento: birthdayInputToApi(form.data_nascimento),
+      });
       alert("Cliente atualizado com sucesso!");
       setShowEditModal(false);
       setEditingId(null);
@@ -151,11 +162,16 @@ export default function Customers() {
           />
 
           <input
-            type="date"
+            type="text"
+            inputMode="numeric"
+            maxLength="10"
             placeholder="Data de Nascimento (opcional)"
             value={form.data_nascimento}
             onChange={(e) =>
-              setForm({ ...form, data_nascimento: e.target.value })
+              setForm({
+                ...form,
+                data_nascimento: formatBirthdayInput(e.target.value),
+              })
             }
           />
 
@@ -268,11 +284,16 @@ export default function Customers() {
               />
 
               <input
-                type="date"
+                type="text"
+                inputMode="numeric"
+                maxLength="10"
                 placeholder="Data de Nascimento (opcional)"
                 value={form.data_nascimento}
                 onChange={(e) =>
-                  setForm({ ...form, data_nascimento: e.target.value })
+                  setForm({
+                    ...form,
+                    data_nascimento: formatBirthdayInput(e.target.value),
+                  })
                 }
               />
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { customerService, dashboardService, pointsService, productService } from "../services";
 import API_URL from "../config";
+import { birthdayInputToApi, formatBirthdayInput } from "../utils/dateInput";
 import "./MobileCapture.css";
 
 const emptyCustomerForm = {
@@ -163,7 +164,7 @@ export default function MobileCapture() {
         nome: newCustomerForm.nome.trim(),
         telefone: newCustomerForm.telefone.trim() || null,
         email: newCustomerForm.email.trim() || null,
-        data_nascimento: newCustomerForm.data_nascimento || null,
+        data_nascimento: birthdayInputToApi(newCustomerForm.data_nascimento),
       };
 
       await customerService.create(payload);
@@ -327,12 +328,15 @@ export default function MobileCapture() {
           />
 
           <input
-            type="date"
+            type="text"
+            inputMode="numeric"
+            maxLength="10"
+            placeholder="Data de nascimento (dd/mm/aaaa)"
             value={newCustomerForm.data_nascimento}
             onChange={(event) =>
               setNewCustomerForm({
                 ...newCustomerForm,
-                data_nascimento: event.target.value,
+                data_nascimento: formatBirthdayInput(event.target.value),
               })
             }
           />

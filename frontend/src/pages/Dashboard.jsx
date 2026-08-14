@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { adminService, dashboardService, customerService, pointsService } from "../services";
+import {
+  birthdayInputToApi,
+  formatBirthdayInput,
+  normalizeBirthdayForInput,
+} from "../utils/dateInput";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -116,7 +121,7 @@ export default function Dashboard() {
         nome: res.data.data.nome,
         telefone: res.data.data.telefone || "",
         email: res.data.data.email || "",
-        data_nascimento: res.data.data.data_nascimento || "",
+        data_nascimento: normalizeBirthdayForInput(res.data.data.data_nascimento),
       });
     } catch (err) {
       console.error("Erro ao carregar dados do cliente", err);
@@ -125,7 +130,10 @@ export default function Dashboard() {
 
   const salvarEdicao = async () => {
     try {
-      await customerService.update(editingCliente.id, formData);
+      await customerService.update(editingCliente.id, {
+        ...formData,
+        data_nascimento: birthdayInputToApi(formData.data_nascimento),
+      });
       alert("Cliente atualizado com sucesso!");
       setEditingCliente(null);
       // Recarregar dados
@@ -522,12 +530,15 @@ export default function Dashboard() {
               <div className="form-group">
                 <label>Data de Nascimento:</label>
                 <input
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength="10"
+                  placeholder="dd/mm/aaaa"
                   value={formData.data_nascimento}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      data_nascimento: e.target.value,
+                      data_nascimento: formatBirthdayInput(e.target.value),
                     })
                   }
                 />
