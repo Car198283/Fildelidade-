@@ -114,6 +114,10 @@
   background: #047857;
 }
 
+.companies-panel button.secondary {
+  background: #475569;
+}
+
 .password-field {
   position: relative;
   display: flex;

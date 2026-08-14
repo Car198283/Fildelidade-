@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Company, PointsTransaction, PromotionConfig, User
+from app.models import Company, Customer, PointsTransaction, Product, PromotionConfig, User, WhatsAppMessage
 from app.schemas.schemas import ManagedCompanyCreate, ManagedCompanyUpdate, ManagedUserCreate, ManagedUserUpdate
 from app.services.auth_service import AuthService
 from app.utils.dependencies import (
@@ -217,6 +217,9 @@ def excluir_empresa(
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa nao encontrada")
 
+    if company.id == current_user.company_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Master nao pode excluir a propria empresa")
+
     has_transactions = (
         db.query(PointsTransaction.id)
         .filter(PointsTransaction.company_id == company_id)
@@ -229,10 +232,20 @@ def excluir_empresa(
             detail="Empresa possui movimentacoes. Altere o status para bloqueada em vez de excluir.",
         )
 
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Exclusao fisica de empresa nao permitida. Altere o status para bloqueada.",
+    has_data = (
+        db.query(Customer.id).filter(Customer.company_id == company_id).first()
+        or db.query(Product.id).filter(Product.company_id == company_id).first()
+        or db.query(WhatsAppMessage.id).filter(WhatsAppMessage.company_id == company_id).first()
     )
+    if has_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empresa possui dados cadastrados. Altere o status para bloqueada em vez de excluir.",
+        )
+
+    db.delete(company)
+    db.commit()
+    return {"success": True, "message": "Empresa excluida com sucesso"}
 
 
 @router.get("/users")

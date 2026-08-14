@@ -181,6 +181,31 @@ class AuthorizationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_master_exclui_empresa_sem_movimentacao(self):
+        create_response = self.client.post(
+            "/admin/companies",
+            json={
+                "razao_social": "Empresa Sem Movimento LTDA",
+                "nome": "Empresa Sem Movimento",
+                "cnpj": "98.765.432/0001-10",
+                "telefone": "(32) 98888-7777",
+                "email": "contato-sem-movimento@example.com",
+                "responsavel": "Joao Silva",
+                "admin_email": "admin-sem-movimento@example.com",
+                "admin_senha": "1234567890",
+            },
+            headers=self._headers(self.master),
+        )
+        self.assertEqual(create_response.status_code, 201)
+        company_id = create_response.json()["data"]["company"]["id"]
+
+        delete_response = self.client.delete(
+            f"/admin/companies/{company_id}",
+            headers=self._headers(self.master),
+        )
+        self.assertEqual(delete_response.status_code, 200)
+        self.assertIsNone(self.db.query(Company).filter(Company.id == company_id).first())
+
     def test_usuario_bloqueado_nao_usa_token_antigo(self):
         response = self.client.get("/clientes/", headers=self._headers(self.inactive_user))
         self.assertEqual(response.status_code, 403)

@@ -26,6 +26,7 @@ export default function CompanyManagement() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [editingCompanyId, setEditingCompanyId] = useState(null);
 
   const loadCompanies = async () => {
     const response = await adminService.companies();
@@ -38,26 +39,97 @@ export default function CompanyManagement() {
     );
   }, []);
 
-  const handleCreateCompany = async (event) => {
+  const getCompanyPayload = () => ({
+    razao_social: form.razao_social,
+    nome: form.nome,
+    cnpj: form.cnpj,
+    telefone: form.telefone,
+    email: form.email,
+    responsavel: form.responsavel,
+    cep: form.cep,
+    endereco: form.endereco,
+    numero: form.numero,
+    bairro: form.bairro,
+    cidade: form.cidade,
+    estado: form.estado.toUpperCase(),
+    logotipo: form.logotipo,
+  });
+
+  const handleSubmitCompany = async (event) => {
     event.preventDefault();
     setLoading(true);
     setMessage("");
 
     try {
-      await adminService.createCompany({
-        ...form,
-        estado: form.estado.toUpperCase(),
-      });
+      if (editingCompanyId) {
+        await adminService.updateCompany(editingCompanyId, getCompanyPayload());
+        setEditingCompanyId(null);
+        setMessage("Empresa atualizada com sucesso.");
+      } else {
+        await adminService.createCompany({
+          ...getCompanyPayload(),
+          admin_email: form.admin_email,
+          admin_senha: form.admin_senha,
+        });
+        setMessage("Empresa e administrador criados com sucesso.");
+      }
       setForm(emptyForm);
       setShowAdminPassword(false);
-      setMessage("Empresa e administrador criados com sucesso.");
       await loadCompanies();
     } catch (error) {
       setMessage(
-        error.response?.data?.detail || "Nao foi possivel criar a empresa.",
+        error.response?.data?.detail || "Nao foi possivel salvar a empresa.",
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEditCompany = (company) => {
+    setEditingCompanyId(company.id);
+    setShowAdminPassword(false);
+    setMessage("");
+    setForm({
+      razao_social: company.razao_social || "",
+      nome: company.nome || "",
+      cnpj: company.cnpj || "",
+      telefone: company.telefone || "",
+      email: company.email || "",
+      responsavel: company.responsavel || "",
+      cep: company.cep || "",
+      endereco: company.endereco || "",
+      numero: company.numero || "",
+      bairro: company.bairro || "",
+      cidade: company.cidade || "",
+      estado: company.estado || "",
+      logotipo: company.logotipo || "",
+      admin_email: "",
+      admin_senha: "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEditCompany = () => {
+    setEditingCompanyId(null);
+    setForm(emptyForm);
+    setShowAdminPassword(false);
+    setMessage("");
+  };
+
+  const deleteCompany = async (company) => {
+    const confirmed = window.confirm(`Excluir a empresa ${company.nome}?`);
+    if (!confirmed) return;
+
+    setMessage("");
+    try {
+      await adminService.deleteCompany(company.id);
+      if (editingCompanyId === company.id) cancelEditCompany();
+      await loadCompanies();
+      setMessage("Empresa excluida com sucesso.");
+    } catch (error) {
+      setMessage(
+        error.response?.data?.detail || "Nao foi possivel excluir a empresa.",
+      );
     }
   };
 
@@ -84,8 +156,8 @@ export default function CompanyManagement() {
       {message && <div className="companies-message">{message}</div>}
 
       <section className="companies-panel">
-        <h2>Nova empresa</h2>
-        <form className="company-form" onSubmit={handleCreateCompany}>
+        <h2>{editingCompanyId ? "Editar empresa" : "Nova empresa"}</h2>
+        <form className="company-form" onSubmit={handleSubmitCompany}>
           <label>
             Razao social *
             <input
@@ -243,24 +315,26 @@ export default function CompanyManagement() {
             />
           </label>
 
-          <div className="form-section-title">Administrador inicial</div>
+          {!editingCompanyId && (
+            <>
+              <div className="form-section-title">Administrador inicial</div>
 
-          <label>
-            E-mail do usuario *
-            <input
-              type="email"
-              placeholder="admin@barcellos.com.br"
-              value={form.admin_email}
-              onChange={(event) =>
-                setForm({ ...form, admin_email: event.target.value })
-              }
-              required
-            />
-          </label>
+              <label>
+                E-mail do usuario *
+                <input
+                  type="email"
+                  placeholder="admin@barcellos.com.br"
+                  value={form.admin_email}
+                  onChange={(event) =>
+                    setForm({ ...form, admin_email: event.target.value })
+                  }
+                  required
+                />
+              </label>
 
-          <label>
-            Senha temporaria *
-            <div className="password-field">
+              <label>
+                Senha temporaria *
+                <div className="password-field">
               <input
                 type={showAdminPassword ? "text" : "password"}
                 placeholder="Minimo 6 caracteres"
@@ -279,13 +353,24 @@ export default function CompanyManagement() {
               >
                 {showAdminPassword ? "Ocultar" : "Ver"}
               </button>
-            </div>
-          </label>
+                </div>
+              </label>
+            </>
+          )}
 
           <div className="company-form-actions">
             <button type="submit" disabled={loading}>
-              {loading ? "Criando..." : "Criar empresa"}
+              {loading
+                ? "Salvando..."
+                : editingCompanyId
+                  ? "Salvar alteracoes"
+                  : "Criar empresa"}
             </button>
+            {editingCompanyId && (
+              <button type="button" className="secondary" onClick={cancelEditCompany}>
+                Cancelar
+              </button>
+            )}
           </div>
         </form>
       </section>
@@ -335,6 +420,9 @@ export default function CompanyManagement() {
                 </div>
 
                 <div className="company-row-actions">
+                  <button type="button" onClick={() => startEditCompany(company)}>
+                    Editar
+                  </button>
                   <button
                     type="button"
                     className={company.ativo ? "danger" : "success"}
@@ -354,6 +442,13 @@ export default function CompanyManagement() {
                     }
                   >
                     {company.read_only ? "Liberar edicao" : "Somente leitura"}
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    onClick={() => deleteCompany(company)}
+                  >
+                    Excluir
                   </button>
                 </div>
               </article>
