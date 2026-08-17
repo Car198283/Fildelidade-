@@ -41,6 +41,8 @@ class ManagedCompanyCreate(BaseModel):
     plano: str = Field("free", max_length=50)
     admin_email: EmailStr
     admin_senha: str = Field(..., min_length=6, max_length=72)
+    whatsapp_phone_number_id: Optional[str] = Field(None, min_length=5, max_length=80)
+    whatsapp_business_account_id: Optional[str] = Field(None, min_length=5, max_length=80)
 
     @field_validator("cnpj")
     @classmethod
@@ -98,6 +100,8 @@ class ManagedCompanyUpdate(BaseModel):
     estado: Optional[str] = Field(None, max_length=2)
     logotipo: Optional[str] = Field(None, max_length=500)
     plano: Optional[str] = Field(None, max_length=50)
+    whatsapp_phone_number_id: Optional[str] = Field(None, min_length=5, max_length=80)
+    whatsapp_business_account_id: Optional[str] = Field(None, min_length=5, max_length=80)
 
     @field_validator("cnpj")
     @classmethod

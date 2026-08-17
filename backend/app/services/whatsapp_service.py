@@ -190,3 +190,34 @@ class WhatsAppService:
         db.commit()
         db.refresh(message)
         return message
+
+    @staticmethod
+    def update_provider_status(
+        db: Session,
+        company_id: int,
+        provider_message_id: str,
+        provider_status: str,
+        error_message: str = None,
+    ) -> WhatsAppMessage:
+        message = db.query(WhatsAppMessage).filter(
+            WhatsAppMessage.company_id == company_id,
+            WhatsAppMessage.provider_message_id == provider_message_id,
+        ).first()
+        if not message:
+            return None
+        mapped = {
+            "sent": "enviado",
+            "delivered": "entregue",
+            "read": "lido",
+            "failed": "erro",
+            "deleted": "cancelado",
+        }.get(provider_status)
+        if not mapped:
+            return message
+        message.status = mapped
+        message.erro = error_message
+        if mapped in {"enviado", "entregue", "lido"} and not message.sent_at:
+            message.sent_at = datetime.utcnow()
+        db.commit()
+        db.refresh(message)
+        return message

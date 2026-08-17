@@ -18,6 +18,8 @@ const emptyForm = {
   logotipo: "",
   admin_email: "",
   admin_senha: "",
+  whatsapp_phone_number_id: "",
+  whatsapp_business_account_id: "",
 };
 
 export default function CompanyManagement() {
@@ -53,6 +55,8 @@ export default function CompanyManagement() {
     cidade: form.cidade,
     estado: form.estado.toUpperCase(),
     logotipo: form.logotipo,
+    whatsapp_phone_number_id: form.whatsapp_phone_number_id || null,
+    whatsapp_business_account_id: form.whatsapp_business_account_id || null,
   });
 
   const handleSubmitCompany = async (event) => {
@@ -105,6 +109,8 @@ export default function CompanyManagement() {
       logotipo: company.logotipo || "",
       admin_email: "",
       admin_senha: "",
+      whatsapp_phone_number_id: company.whatsapp_phone_number_id || "",
+      whatsapp_business_account_id: company.whatsapp_business_account_id || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -375,6 +381,28 @@ export default function CompanyManagement() {
               </label>
             </>
           )}
+
+          <div className="form-section-title">WhatsApp Cloud API</div>
+
+          <label>
+            Phone Number ID
+            <input
+              type="text"
+              placeholder="ID fornecido pela Meta"
+              value={form.whatsapp_phone_number_id}
+              onChange={(event) => setForm({ ...form, whatsapp_phone_number_id: event.target.value })}
+            />
+          </label>
+
+          <label>
+            Business Account ID
+            <input
+              type="text"
+              placeholder="WhatsApp Business Account ID"
+              value={form.whatsapp_business_account_id}
+              onChange={(event) => setForm({ ...form, whatsapp_business_account_id: event.target.value })}
+            />
+          </label>
 
           <div className="company-form-actions">
             <button type="submit" disabled={loading}>

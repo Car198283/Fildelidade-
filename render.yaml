@@ -34,6 +34,10 @@ services:
         sync: false
       - key: N8N_WEBHOOK_SECRET
         sync: false
+      - key: META_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
 
   - type: web
     name: fidelidade-web

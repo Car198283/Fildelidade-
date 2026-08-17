@@ -37,6 +37,8 @@ def serialize_company(company: Company) -> dict:
         "plano": company.plano,
         "ativo": company.ativo,
         "read_only": company.read_only,
+        "whatsapp_phone_number_id": company.whatsapp_phone_number_id,
+        "whatsapp_business_account_id": company.whatsapp_business_account_id,
         "created_at": company.created_at,
         "updated_at": company.updated_at,
     }
@@ -140,6 +142,8 @@ def criar_empresa(
             plano=body.plano,
             ativo=True,
             read_only=False,
+            whatsapp_phone_number_id=body.whatsapp_phone_number_id,
+            whatsapp_business_account_id=body.whatsapp_business_account_id,
         )
         db.add(company)
         db.flush()
@@ -220,6 +224,8 @@ def atualizar_empresa(
         "estado",
         "logotipo",
         "plano",
+        "whatsapp_phone_number_id",
+        "whatsapp_business_account_id",
     ]
     for field in text_fields:
         value = getattr(body, field)

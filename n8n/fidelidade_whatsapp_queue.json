@@ -39,12 +39,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "url": "={{ $env.META_GRAPH_API_URL + '/' + $env.META_PHONE_NUMBER_ID + '/messages' }}",
         "sendHeaders": true,
         "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}" }] },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"to\": $json.telefone, \"message\": $json.mensagem } }}"
+        "jsonBody": "={{ { \"messaging_product\": \"whatsapp\", \"recipient_type\": \"individual\", \"to\": $json.telefone, \"type\": \"text\", \"text\": { \"preview_url\": false, \"body\": $json.mensagem } } }}"
       },
       "id": "send",
       "name": "Enviar no provedor",
@@ -63,7 +63,7 @@
         ] },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { \"status\": \"enviado\", \"provider_message_id\": $json.id || $json.messageId || \"\" } }}"
+        "jsonBody": "={{ { \"status\": \"enviado\", \"provider_message_id\": $json.messages?.[0]?.id || \"\" } }}"
       },
       "id": "callback",
       "name": "Confirmar envio",

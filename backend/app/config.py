@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     master_email: str | None = None
     master_password: str | None = None
     n8n_webhook_secret: str | None = Field(None, min_length=32)
+    meta_webhook_verify_token: str | None = Field(None, min_length=16)
+    meta_app_secret: str | None = Field(None, min_length=16)
     debug: bool = False
     api_host: str = "0.0.0.0"
     api_port: int = 8000
