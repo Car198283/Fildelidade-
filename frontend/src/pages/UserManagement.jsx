@@ -88,6 +88,16 @@ export default function UserManagement() {
     try { await adminService.updateUser(user.id, { senha: password, exigir_troca_senha: true, motivo: "Redefinicao administrativa de senha" }); await refresh(); setMessage("Senha temporaria definida com troca obrigatoria no proximo acesso."); }
     catch (error) { setMessage(error.response?.data?.detail || "Nao foi possivel redefinir a senha."); }
   };
+  const removeUser = async (user) => {
+    const identification = user.nome || user.email;
+    if (!window.confirm(`Excluir o usuario ${identification}?\n\nO acesso sera removido, mas o historico de atividades sera preservado.`)) return;
+    try {
+      await adminService.deleteUser(user.id);
+      if (editingUserId === user.id) cancelEdit(false);
+      await refresh();
+      setMessage("Usuario excluido e historico preservado.");
+    } catch (error) { setMessage(error.response?.data?.detail || "Nao foi possivel excluir o usuario."); }
+  };
   const updateCompany = async (data) => {
     try { await adminService.updateCompany(selectedCompanyId, data); const response = await adminService.companies(); setCompanies(response.data?.data || []); setMessage("Status da empresa atualizado."); }
     catch (error) { setMessage(error.response?.data?.detail || "Nao foi possivel atualizar a empresa."); }
@@ -110,7 +120,7 @@ export default function UserManagement() {
     </form><div className="role-help"><strong>{roleNames[form.role]}:</strong> {roleDescriptions[form.role]}</div></section>
 
     <section className="users-panel"><div className="list-header"><h2>Usuarios cadastrados</h2><div className="users-filters"><input placeholder="Buscar por nome ou email" value={filters.search} onChange={(e) => { setFilters({ ...filters, search: e.target.value }); setPage(1); }}/><select value={filters.role} onChange={(e) => { setFilters({ ...filters, role: e.target.value }); setPage(1); }}><option value="">Todos os perfis</option><option value="admin">Administradores</option><option value="operador_captura">Operadores</option><option value="observador">Observadores</option></select><select value={filters.status} onChange={(e) => { setFilters({ ...filters, status: e.target.value }); setPage(1); }}><option value="">Todos os status</option><option value="active">Ativos</option><option value="inactive">Inativos</option></select></div></div>
-      <div className="users-list">{users.map((user) => <article className="user-row" key={user.id}><div className="user-identity"><strong>{user.nome || "Nome nao informado"}</strong><span>{user.email}</span><div><span className={`role-badge role-${user.role}`}>{roleNames[user.role] || user.role}</span><span className={user.ativo ? "active-badge" : "inactive-badge"}>{user.ativo ? "Ativo" : "Inativo"}</span>{user.exigir_troca_senha && <span className="password-badge">Troca de senha pendente</span>}</div><small>Ultimo acesso: {formatDate(user.ultimo_acesso)} · Criado em: {formatDate(user.created_at)}</small></div><div className="user-actions"><button onClick={() => edit(user)}>Editar</button><button className="secondary" onClick={() => resetPassword(user)}>Redefinir senha</button><button className={user.ativo ? "danger" : "success"} onClick={() => toggle(user)}>{user.ativo ? "Desativar" : "Reativar"}</button></div></article>)}</div>
+      <div className="users-list">{users.map((user) => <article className="user-row" key={user.id}><div className="user-identity"><strong>{user.nome || "Nome nao informado"}</strong><span>{user.email}</span><div><span className={`role-badge role-${user.role}`}>{roleNames[user.role] || user.role}</span><span className={user.ativo ? "active-badge" : "inactive-badge"}>{user.ativo ? "Ativo" : "Inativo"}</span>{user.exigir_troca_senha && <span className="password-badge">Troca de senha pendente</span>}</div><small>Ultimo acesso: {formatDate(user.ultimo_acesso)} · Criado em: {formatDate(user.created_at)}</small></div><div className="user-actions"><button onClick={() => edit(user)}>Editar</button><button className="secondary" onClick={() => resetPassword(user)}>Redefinir senha</button><button className={user.ativo ? "danger" : "success"} onClick={() => toggle(user)}>{user.ativo ? "Desativar" : "Reativar"}</button>{isMaster && <button className="danger-outline" onClick={() => removeUser(user)}>Excluir</button>}</div></article>)}</div>
       {!users.length && <p className="empty-users">Nenhum usuario encontrado com estes filtros.</p>}<div className="pagination"><button disabled={page === 1} onClick={() => setPage(page - 1)}>Anterior</button><span>Pagina {page} de {Math.max(1, Math.ceil(total / pageSize))}</span><button disabled={page * pageSize >= total} onClick={() => setPage(page + 1)}>Proxima</button></div>
     </section>
 

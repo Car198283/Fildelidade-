@@ -118,6 +118,16 @@
   background: #b91c1c;
 }
 
+.users-panel button.danger-outline {
+  border: 1px solid #b91c1c;
+  background: #fff;
+  color: #b91c1c;
+}
+
+.users-panel button.danger-outline:hover {
+  background: #fef2f2;
+}
+
 .users-panel button.success {
   background: #047857;
 }
