@@ -32,6 +32,8 @@ services:
         value: cadufcosta@yahoo.com.br
       - key: MASTER_PASSWORD
         sync: false
+      - key: N8N_WEBHOOK_SECRET
+        sync: false
 
   - type: web
     name: fidelidade-web

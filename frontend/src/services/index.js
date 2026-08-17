@@ -187,3 +187,17 @@ export const dashboardService = {
       responseType: "blob",
     }),
 };
+
+// ========== WHATSAPP / N8N ==========
+
+export const integrationService = {
+  generateWhatsAppQueue: (data, idempotencyKey) =>
+    api.post("/integracoes/n8n/whatsapp/fila/gerar", data, {
+      headers: { "Idempotency-Key": idempotencyKey },
+    }),
+
+  whatsappQueue: (status = "") =>
+    api.get("/integracoes/n8n/whatsapp/fila", {
+      params: { status: status || undefined },
+    }),
+};

@@ -19,6 +19,7 @@ import PromotionConfig from "./pages/PromotionConfig";
 import UserManagement from "./pages/UserManagement";
 import CompanyManagement from "./pages/CompanyManagement";
 import ChangePassword from "./pages/ChangePassword";
+import WhatsAppIntegration from "./pages/WhatsAppIntegration";
 
 import "./App.css";
 
@@ -98,6 +99,7 @@ function ProtectedLayout({ children }) {
             {canManage && <a href="/products">Produtos</a>}
             {canManage && <a href="/promotion-config">Promocao</a>}
             {canManage && <a href="/usuarios">Usuarios</a>}
+            {canManage && <a href="/integracoes">WhatsApp</a>}
             {isMaster && <a href="/empresas">Empresas</a>}
             <a href="/captura" className="capture-link">
               Captura
@@ -200,6 +202,15 @@ export default function App() {
               <ProtectedLayout>
                 <UserManagement />
               </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/integracoes"
+          element={
+            <PrivateRoute roles={["admin", "master"]}>
+              <ProtectedLayout><WhatsAppIntegration /></ProtectedLayout>
             </PrivateRoute>
           }
         />

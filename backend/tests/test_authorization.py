@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 
 from app.database import SessionLocal, engine
 from app.main import app
-from app.models import Base, Company, Customer, PointsTransaction, PromotionConfig, User
+from app.config import settings
+from app.models import Base, Company, Customer, PointsTransaction, PromotionConfig, User, WhatsAppMessage
 from app.services.auth_service import AuthService
 
 
@@ -250,12 +251,67 @@ class AuthorizationTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_observador_nao_gera_fila_whatsapp(self):
+        headers = self._headers(self.observer)
+        headers["Idempotency-Key"] = "observer-denied-001"
         response = self.client.post(
             "/integracoes/n8n/whatsapp/fila/gerar",
             json={"tipo": "manual", "customer_id": self.customer.id, "mensagem_template": "Ola {nome}"},
-            headers=self._headers(self.observer),
+            headers=headers,
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_whatsapp_n8n_e_idempotente_autenticado_e_isolado(self):
+        headers = self._headers(self.admin)
+        headers["Idempotency-Key"] = "campanha-agosto-001"
+        body = {
+            "tipo": "manual",
+            "customer_id": self.customer.id,
+            "mensagem_template": "Ola {nome}, voce tem {pontos} pontos",
+            "max_attempts": 3,
+        }
+        first = self.client.post("/integracoes/n8n/whatsapp/fila/gerar", json=body, headers=headers)
+        second = self.client.post("/integracoes/n8n/whatsapp/fila/gerar", json=body, headers=headers)
+        self.assertEqual(first.status_code, 200, first.text)
+        self.assertEqual(second.status_code, 200, second.text)
+        self.assertEqual(first.json()["data"][0]["id"], second.json()["data"][0]["id"])
+        self.assertEqual(self.db.query(WhatsAppMessage).count(), 1)
+
+        previous_secret = settings.n8n_webhook_secret
+        settings.n8n_webhook_secret = "n8n-test-secret-with-at-least-32-characters"
+        try:
+            denied = self.client.post(
+                "/integracoes/n8n/whatsapp/fila/consumir",
+                json={"limit": 10},
+                headers={"X-N8N-Secret": "segredo-invalido", "X-Company-Id": str(self.company.id)},
+            )
+            self.assertEqual(denied.status_code, 401)
+
+            consumed = self.client.post(
+                "/integracoes/n8n/whatsapp/fila/consumir",
+                json={"limit": 10},
+                headers={"X-N8N-Secret": settings.n8n_webhook_secret, "X-Company-Id": str(self.company.id)},
+            )
+            self.assertEqual(consumed.status_code, 200, consumed.text)
+            self.assertEqual(consumed.json()["total"], 1)
+            message_id = consumed.json()["data"][0]["id"]
+            self.assertEqual(consumed.json()["data"][0]["status"], "processando")
+
+            callback = self.client.post(
+                f"/integracoes/n8n/whatsapp/fila/{message_id}/callback",
+                json={"status": "enviado", "provider_message_id": "wamid.123"},
+                headers={"X-N8N-Secret": settings.n8n_webhook_secret, "X-Company-Id": str(self.company.id)},
+            )
+            self.assertEqual(callback.status_code, 200, callback.text)
+            self.assertEqual(callback.json()["data"]["status"], "enviado")
+
+            other_company = self.client.post(
+                "/integracoes/n8n/whatsapp/fila/consumir",
+                json={"limit": 10},
+                headers={"X-N8N-Secret": settings.n8n_webhook_secret, "X-Company-Id": str(self.other_company.id)},
+            )
+            self.assertEqual(other_company.json()["total"], 0)
+        finally:
+            settings.n8n_webhook_secret = previous_secret
 
     def test_admin_exclui_usuario_da_empresa(self):
         response = self.client.delete(

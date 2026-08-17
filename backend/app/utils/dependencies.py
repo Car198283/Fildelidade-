@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -5,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Company, User
 from app.services.auth_service import AuthService
+from app.config import settings
 
 security = HTTPBearer()
 
@@ -70,6 +73,23 @@ require_capture_operator = require_roles(ROLE_CAPTURE_OPERATOR, ROLE_ADMIN, ROLE
 require_read_access = require_roles(ROLE_OBSERVER, ROLE_CAPTURE_OPERATOR, ROLE_ADMIN, ROLE_MASTER)
 require_points_write_access = require_roles(ROLE_CAPTURE_OPERATOR, ROLE_ADMIN, ROLE_MASTER)
 require_operator_or_above = require_read_access
+
+
+def require_n8n_company(
+    x_n8n_secret: str = Header(..., alias="X-N8N-Secret"),
+    x_company_id: int = Header(..., alias="X-Company-Id"),
+    db: Session = Depends(get_db),
+) -> int:
+    """Autenticacao maquina-a-maquina isolada por empresa para o n8n."""
+    configured = settings.n8n_webhook_secret
+    if not configured:
+        raise HTTPException(status_code=503, detail="Integracao n8n nao configurada")
+    if not secrets.compare_digest(x_n8n_secret, configured):
+        raise HTTPException(status_code=401, detail="Credencial n8n invalida")
+    company = db.query(Company).filter(Company.id == x_company_id, Company.ativo == True).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa nao encontrada")
+    return company.id
 
 
 def get_effective_company_id(
