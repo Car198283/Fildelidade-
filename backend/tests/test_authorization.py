@@ -274,6 +274,57 @@ class AuthorizationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_promocao_avancada_cria_auditoria_e_simula(self):
+        payload = {
+            "tipo": "valor",
+            "nome": "Bonus por valor",
+            "valor_gasto": 100,
+            "pontos_por_valor": 10,
+            "descricao": "A cada R$ 100, ganhe 10 pontos.",
+            "ativo": True,
+            "acumulavel": True,
+            "prioridade": 10,
+            "valor_minimo_compra": 50,
+            "recompensa_tipo": "pontos",
+            "motivo_alteracao": "Criacao em teste",
+        }
+        created = self.client.post(
+            "/promocoes/config", json=payload, headers=self._headers(self.admin)
+        )
+        self.assertEqual(created.status_code, 200, created.text)
+        self.assertEqual(created.json()["data"]["situacao"], "ativa")
+
+        simulation = self.client.post(
+            "/promocoes/simular",
+            json={"compras": 1, "valor_compra": 250},
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(simulation.status_code, 200, simulation.text)
+        self.assertEqual(simulation.json()["data"]["pontos_totais"], 20)
+
+        history = self.client.get(
+            "/promocoes/historico", headers=self._headers(self.admin)
+        )
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(history.json()["data"][0]["motivo"], "Criacao em teste")
+
+    def test_promocao_respeita_isolamento_da_empresa(self):
+        self.db.add(PromotionConfig(
+            company_id=self.other_company.id,
+            tipo="quantidade",
+            quantidade_produtos=2,
+            pontos_por_quantidade=5,
+            descricao="Outra empresa",
+            ativo=True,
+        ))
+        self.db.commit()
+
+        response = self.client.get(
+            "/promocoes/configs", headers=self._headers(self.admin)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["total"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

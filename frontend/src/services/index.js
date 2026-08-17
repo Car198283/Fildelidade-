@@ -117,6 +117,10 @@ export const promotionService = {
   createConfig: (data) => api.post("/promocoes/config", data),
 
   updateConfig: (id, data) => api.put(`/promocoes/config/${id}`, data),
+
+  history: () => api.get("/promocoes/historico"),
+
+  simulate: (data) => api.post("/promocoes/simular", data),
 };
 
 // ========== DASHBOARD ==========

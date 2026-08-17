@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Index, Enum as SQLEnum, Boolean
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Index, Enum as SQLEnum, Boolean, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -36,6 +36,22 @@ class PromotionConfig(Base, TimestampMixin):
     # Informações
     descricao = Column(String(500), nullable=True)
     ativo = Column(Boolean, default=True, nullable=False)
+    nome = Column(String(120), nullable=True)
+    data_inicio = Column(DateTime, nullable=True)
+    data_fim = Column(DateTime, nullable=True)
+    acumulavel = Column(Boolean, default=True, nullable=False)
+    prioridade = Column(Integer, default=0, nullable=False)
+    limite_por_cliente = Column(Integer, nullable=True)
+    limite_total = Column(Integer, nullable=True)
+    valor_minimo_compra = Column(Numeric(12, 2), nullable=True)
+    recompensa_tipo = Column(String(30), default="pontos", nullable=False)
+    recompensa_valor = Column(Numeric(12, 2), nullable=True)
+    condicao_campo = Column(String(50), nullable=True)
+    condicao_operador = Column(String(20), nullable=True)
+    condicao_valor = Column(Numeric(12, 2), nullable=True)
+    produtos_elegiveis = Column(JSON, nullable=True)
+    categorias_elegiveis = Column(JSON, nullable=True)
+    motivo_alteracao = Column(String(500), nullable=True)
     
     # Índices
     __table_args__ = (
@@ -47,3 +63,16 @@ class PromotionConfig(Base, TimestampMixin):
 
     def __repr__(self):
         return f"<PromotionConfig tipo={self.tipo} company_id={self.company_id}>"
+
+
+class PromotionAudit(Base, TimestampMixin):
+    __tablename__ = "promotion_audits"
+
+    id = Column(Integer, primary_key=True)
+    promotion_id = Column(Integer, ForeignKey("promotion_configs.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    acao = Column(String(30), nullable=False)
+    motivo = Column(String(500), nullable=False)
+    antes = Column(JSON, nullable=True)
+    depois = Column(JSON, nullable=True)
