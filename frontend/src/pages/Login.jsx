@@ -33,6 +33,11 @@ export default function Login() {
       localStorage.setItem("accessToken", response.data.data.access_token);
       localStorage.setItem("user", JSON.stringify(response.data.data));
 
+      if (response.data.data.exigir_troca_senha) {
+        navigate("/trocar-senha");
+        return;
+      }
+
       const nextPath = searchParams.get("next");
       if (nextPath === "/celular" || nextPath === "/captura") {
         localStorage.setItem("mobileCaptureOnly", "1");

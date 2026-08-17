@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.schemas import UserCreate, UserLogin, RegisterRequest
+from app.models import User
+from app.schemas.schemas import PasswordChange, UserCreate, UserLogin, RegisterRequest
 from app.services.auth_service import AuthService
+from app.utils.dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -50,3 +52,19 @@ def login(
         "success": True,
         "data": result
     }
+
+
+@router.post("/change-password")
+def change_password(
+    body: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not AuthService.verify_password(body.senha_atual, current_user.senha_hash):
+        raise HTTPException(status_code=400, detail="Senha atual incorreta")
+    if body.senha_atual == body.nova_senha:
+        raise HTTPException(status_code=400, detail="A nova senha deve ser diferente da atual")
+    current_user.senha_hash = AuthService.hash_password(body.nova_senha)
+    current_user.exigir_troca_senha = False
+    db.commit()
+    return {"success": True, "message": "Senha alterada com sucesso"}

@@ -12,6 +12,12 @@ export const authService = {
 
   login: (email, password) =>
     api.post("/auth/login", { email, senha: password }),
+
+  changePassword: (currentPassword, newPassword) =>
+    api.post("/auth/change-password", {
+      senha_atual: currentPassword,
+      nova_senha: newPassword,
+    }),
 };
 
 export const adminService = {
@@ -26,8 +32,11 @@ export const adminService = {
   deleteCompany: (id, force = false) =>
     api.delete(`/admin/companies/${id}`, { params: { force } }),
 
-  users: (companyId = null) =>
-    api.get("/admin/users", { params: { company_id: companyId } }),
+  users: (companyId = null, filters = {}) =>
+    api.get("/admin/users", { params: { company_id: companyId, ...filters } }),
+
+  userHistory: (companyId = null) =>
+    api.get("/admin/users/audit/history", { params: { company_id: companyId } }),
 
   createUser: (data) => api.post("/admin/users", data),
 

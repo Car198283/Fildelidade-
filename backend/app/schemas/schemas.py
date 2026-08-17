@@ -66,15 +66,20 @@ class UserCreate(UserBase):
     senha: str = Field(..., min_length=6, max_length=72)
 
 class ManagedUserCreate(BaseModel):
+    nome: str = Field(..., min_length=2, max_length=160)
     email: EmailStr
     senha: str = Field(..., min_length=6, max_length=72)
     role: str = Field("observador", pattern="^(admin|operador_captura|observador)$")
     company_id: Optional[int] = None
+    exigir_troca_senha: bool = True
 
 class ManagedUserUpdate(BaseModel):
+    nome: Optional[str] = Field(None, min_length=2, max_length=160)
     role: Optional[str] = Field(None, pattern="^(admin|operador_captura|observador)$")
     ativo: Optional[bool] = None
     senha: Optional[str] = Field(None, min_length=6, max_length=72)
+    exigir_troca_senha: Optional[bool] = None
+    motivo: str = Field(..., min_length=3, max_length=500)
 
 class ManagedCompanyUpdate(BaseModel):
     ativo: Optional[bool] = None
@@ -102,6 +107,10 @@ class ManagedCompanyUpdate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     senha: str
+
+class PasswordChange(BaseModel):
+    senha_atual: str = Field(..., min_length=6, max_length=72)
+    nova_senha: str = Field(..., min_length=8, max_length=72)
 
 class RegisterRequest(BaseModel):
     company_name: str = Field(..., min_length=1, max_length=200)

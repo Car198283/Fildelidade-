@@ -18,6 +18,7 @@ import MobileCapture from "./pages/MobileCapture";
 import PromotionConfig from "./pages/PromotionConfig";
 import UserManagement from "./pages/UserManagement";
 import CompanyManagement from "./pages/CompanyManagement";
+import ChangePassword from "./pages/ChangePassword";
 
 import "./App.css";
 
@@ -43,6 +44,10 @@ function PrivateRoute({ children, roles = [] }) {
     return (
       <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} />
     );
+  }
+
+  if (user.exigir_troca_senha && location.pathname !== "/trocar-senha") {
+    return <Navigate to="/trocar-senha" />;
   }
 
   if (mobileCaptureOnly && location.pathname !== "/captura") {
@@ -122,6 +127,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/cadastro-cliente" element={<CustomerRegistration />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/trocar-senha" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
 
         <Route
           path="/dashboard"

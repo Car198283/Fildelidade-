@@ -160,6 +160,9 @@ class AuthService:
             user.role,
             configured_master_match,
         )
+
+        user.ultimo_acesso = datetime.utcnow()
+        db.commit()
         
         # Cria token
         token = AuthService.create_access_token(
@@ -172,6 +175,8 @@ class AuthService:
             "user_id": user.id,
             "company_id": user.company_id,
             "email": user.email,
+            "nome": user.nome,
             "role": user.role,
+            "exigir_troca_senha": user.exigir_troca_senha,
             "company_read_only": company.read_only
         }
