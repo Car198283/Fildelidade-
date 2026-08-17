@@ -51,6 +51,7 @@ export default function CustomerDetails() {
         tipo: pointsForm.tipo,
         product_id: pointsForm.product_id ? Number(pointsForm.product_id) : null,
         descricao: pointsForm.descricao,
+        motivo: pointsForm.descricao.trim() || "Movimentacao manual no cadastro do cliente",
       });
 
       setPointsForm({ pontos: "", tipo: "entrada", product_id: "", descricao: "" });

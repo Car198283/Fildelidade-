@@ -60,8 +60,15 @@ export const customerService = {
 // ========== POINTS ==========
 
 export const pointsService = {
-  moviment: (customerId, data) =>
-    api.post(`/clientes/${customerId}/pontos`, data),
+  moviment: (customerId, data, idempotencyKey = crypto.randomUUID()) => {
+    const motivo = data.motivo?.trim() || data.descricao?.trim() || "Movimentacao de pontos";
+
+    return api.post(
+      `/clientes/${customerId}/pontos`,
+      { ...data, motivo },
+      { headers: { "Idempotency-Key": idempotencyKey } },
+    );
+  },
 
   history: (customerId, page = 1, limit = 50) =>
     api.get(`/clientes/${customerId}/pontos/historico`, {

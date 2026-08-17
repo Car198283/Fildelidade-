@@ -198,6 +198,7 @@ export default function MobileCapture() {
         pontos,
         tipo: "entrada",
         descricao: pointsForm.descricao.trim() || "Compra",
+        motivo: pointsForm.descricao.trim() || "Compra registrada na captura mobile",
         product_id: pointsForm.product_id ? Number(pointsForm.product_id) : null,
       });
 
@@ -230,6 +231,7 @@ export default function MobileCapture() {
         pontos,
         tipo: "saida",
         descricao: "Resgate de premio - pontuacao zerada",
+        motivo: "Premio resgatado na captura mobile",
       });
 
       showMessage("Premio resgatado e pontuacao zerada.");
