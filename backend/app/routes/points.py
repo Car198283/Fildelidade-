@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
@@ -14,7 +14,8 @@ def movimentar_pontos(
     body: PointsTransactionCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_points_write_access),
-    company_id: int = Depends(get_writable_company_id)
+    company_id: int = Depends(get_writable_company_id),
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=8, max_length=255)
 ):
     """
     Movimenta pontos do cliente (entrada ou saida)
@@ -30,7 +31,11 @@ def movimentar_pontos(
             pontos=body.pontos,
             tipo=body.tipo,
             descricao=body.descricao,
-            product_id=body.product_id
+            product_id=body.product_id,
+            user_id=current_user.id,
+            origem="api",
+            motivo=body.motivo,
+            idempotency_key=idempotency_key
         )
         
         return {

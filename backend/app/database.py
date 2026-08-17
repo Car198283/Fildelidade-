@@ -1,128 +1,21 @@
 from sqlalchemy import create_engine
-from sqlalchemy import inspect, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
+
 from app.config import settings
-import os
 
-# Determinar qual URL usar baseado em DB_TYPE
-database_url = settings.get_database_url()
-db_info = settings.get_database_info()
-
-print(f"\n[DATABASE] Usando: {db_info}")
-
-# Configurações específicas por tipo de banco
-if settings.db_type.lower() == "postgresql":
-    # PostgreSQL - com pool e timeouts
-    engine = create_engine(
-        database_url,
-        echo=settings.debug,
-        pool_size=5,
-        max_overflow=10,
-        pool_pre_ping=True,
-        pool_recycle=3600
-    )
+engine_options = {"pool_pre_ping": True}
+if settings.database_url.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
 else:
-    # SQLite - com check_same_thread=False para suportar múltiplas threads
-    # Criar diretório se não existir
-    sqlite_dir = os.path.dirname(settings.sqlite_path)
-    if sqlite_dir and not os.path.exists(sqlite_dir):
-        os.makedirs(sqlite_dir, exist_ok=True)
-    
-    engine = create_engine(
-        database_url,
-        echo=settings.debug,
-        connect_args={"check_same_thread": False}
-    )
+    engine_options.update(pool_size=5, max_overflow=10, pool_recycle=3600)
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+engine = create_engine(settings.database_url, echo=settings.debug, **engine_options)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db() -> Session:
-    """Dependency para obter sessão do banco"""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-def _normalize_existing_company_cnpjs(conn):
-    if engine.dialect.name == "postgresql":
-        conn.execute(
-            text("UPDATE companies SET cnpj = regexp_replace(cnpj, '\\D', '', 'g') WHERE cnpj IS NOT NULL")
-        )
-    else:
-        conn.execute(
-            text(
-                "UPDATE companies SET cnpj = "
-                "replace(replace(replace(replace(replace(cnpj, '.', ''), '-', ''), '/', ''), ' ', ''), '\\', '') "
-                "WHERE cnpj IS NOT NULL"
-            )
-        )
-
-
-def _create_company_cnpj_unique_index(conn):
-    duplicates = conn.execute(
-        text(
-            "SELECT cnpj FROM companies "
-            "WHERE cnpj IS NOT NULL AND cnpj != '' "
-            "GROUP BY cnpj HAVING COUNT(*) > 1 LIMIT 1"
-        )
-    ).first()
-    if duplicates:
-        print("[AVISO] CNPJ duplicado encontrado; indice unico de companies.cnpj nao foi criado")
-        return
-
-    conn.execute(
-        text(
-            "CREATE UNIQUE INDEX IF NOT EXISTS uq_companies_cnpj "
-            "ON companies (cnpj) WHERE cnpj IS NOT NULL AND cnpj != ''"
-        )
-    )
-
-
-def ensure_runtime_schema():
-    """Aplica pequenas migracoes compativeis com bancos SQLite existentes."""
-    inspector = inspect(engine)
-    table_names = inspector.get_table_names()
-    if "companies" in table_names:
-        company_columns = {column["name"] for column in inspector.get_columns("companies")}
-        company_extra_columns = {
-            "razao_social": "VARCHAR(255)",
-            "cnpj": "VARCHAR(14)",
-            "telefone": "VARCHAR(30)",
-            "email": "VARCHAR(255)",
-            "responsavel": "VARCHAR(255)",
-            "cep": "VARCHAR(20)",
-            "endereco": "VARCHAR(255)",
-            "numero": "VARCHAR(30)",
-            "bairro": "VARCHAR(120)",
-            "cidade": "VARCHAR(120)",
-            "estado": "VARCHAR(2)",
-            "logotipo": "VARCHAR(500)",
-        }
-        with engine.begin() as conn:
-            if "read_only" not in company_columns:
-                if engine.dialect.name == "postgresql":
-                    conn.execute(text("ALTER TABLE companies ADD COLUMN read_only BOOLEAN NOT NULL DEFAULT false"))
-                else:
-                    conn.execute(text("ALTER TABLE companies ADD COLUMN read_only BOOLEAN NOT NULL DEFAULT 0"))
-            for column_name, column_type in company_extra_columns.items():
-                if column_name not in company_columns:
-                    conn.execute(text(f"ALTER TABLE companies ADD COLUMN {column_name} {column_type}"))
-            _normalize_existing_company_cnpjs(conn)
-            _create_company_cnpj_unique_index(conn)
-
-    if "points_transactions" not in table_names:
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("points_transactions")}
-    with engine.begin() as conn:
-        if "product_id" not in columns:
-            conn.execute(text("ALTER TABLE points_transactions ADD COLUMN product_id INTEGER"))
-        if "product_nome" not in columns:
-            conn.execute(text("ALTER TABLE points_transactions ADD COLUMN product_nome VARCHAR(255)"))
-

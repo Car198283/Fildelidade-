@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import Customer, PointsTransaction, Product
 from typing import Tuple
 from decimal import Decimal
+from sqlalchemy.exc import IntegrityError
 
 class PointsService:
     """
@@ -19,7 +20,11 @@ class PointsService:
         pontos: float,
         tipo: str,
         descricao: str,
-        product_id: int = None
+        product_id: int = None,
+        user_id: int = None,
+        origem: str = "api",
+        motivo: str = None,
+        idempotency_key: str = None
     ) -> Tuple[PointsTransaction, Customer]:
         """
         Função central de movimentação de pontos
@@ -41,11 +46,25 @@ class PointsService:
             - Atualiza saldo do cliente
         """
         
-        # Busca cliente
+        if not user_id or not motivo:
+            raise ValueError("Usuario e motivo sao obrigatorios para auditoria")
+        if idempotency_key:
+            existing = db.query(PointsTransaction).filter(
+                PointsTransaction.company_id == company_id,
+                PointsTransaction.idempotency_key == idempotency_key,
+            ).first()
+            if existing:
+                customer = db.query(Customer).filter(
+                    Customer.id == existing.customer_id,
+                    Customer.company_id == company_id,
+                ).first()
+                return existing, customer
+
+        # Busca cliente e bloqueia a linha para evitar perda de atualizacoes concorrentes
         customer = db.query(Customer).filter(
             Customer.id == customer_id,
             Customer.company_id == company_id
-        ).first()
+        ).with_for_update().first()
         
         if not customer:
             raise ValueError("Cliente não encontrado")
@@ -87,7 +106,11 @@ class PointsService:
             product_nome=product.nome if product else None,
             pontos=pontos_decimal,
             tipo=tipo,
-            descricao=descricao
+            descricao=descricao,
+            user_id=user_id,
+            origem=origem,
+            motivo=motivo,
+            idempotency_key=idempotency_key
         )
         db.add(transaction)
         
@@ -96,7 +119,21 @@ class PointsService:
         db.add(customer)
         
         # Commit atômico
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            if not idempotency_key:
+                raise
+            existing = db.query(PointsTransaction).filter(
+                PointsTransaction.company_id == company_id,
+                PointsTransaction.idempotency_key == idempotency_key,
+            ).first()
+            customer = db.query(Customer).filter(
+                Customer.id == existing.customer_id,
+                Customer.company_id == company_id,
+            ).first()
+            return existing, customer
         db.refresh(transaction)
         db.refresh(customer)
         

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, DateTime, Index
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.models.base import Base, TimestampMixin
@@ -15,6 +15,10 @@ class PointsTransaction(Base, TimestampMixin):
     pontos = Column(Numeric(12, 2), nullable=False)  # Valor da transacao
     tipo = Column(String(20), nullable=False)  # "entrada" ou "saida"
     descricao = Column(String(255), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    origem = Column(String(50), nullable=False, default="api")
+    motivo = Column(String(500), nullable=False)
+    idempotency_key = Column(String(255), nullable=True)
     
     # Índices
     __table_args__ = (
@@ -22,6 +26,7 @@ class PointsTransaction(Base, TimestampMixin):
         Index('idx_transaction_company', 'company_id'),
         Index('idx_transaction_product', 'product_id'),
         Index('idx_transaction_created', 'created_at'),
+        UniqueConstraint('company_id', 'idempotency_key', name='uq_points_company_idempotency'),
     )
 
     # Relacionamentos
