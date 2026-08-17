@@ -10,6 +10,7 @@ os.environ["SECRET_KEY"] = "test-secret-key-with-at-least-32-characters"
 from app.database import SessionLocal, engine
 from app.models import Base, Company, Customer, User
 from app.services.points_service import PointsService
+from app.services.dashboard_service import DashboardService
 
 
 class PointsIntegrityTestCase(unittest.TestCase):
@@ -50,6 +51,13 @@ class PointsIntegrityTestCase(unittest.TestCase):
                 self.db, self.customer_id, other.id, 10, "entrada", "Compra",
                 user_id=self.user_id, origem="test", motivo="Teste", idempotency_key="pedido-99999",
             )
+
+    def test_dashboard_expoe_inativos_de_15_e_30_dias(self):
+        stats = DashboardService.get_dashboard_stats(self.db, self.company_id)
+        self.assertEqual(stats["total_clientes"], 1)
+        self.assertEqual(stats["clientes_inativos_15"], 1)
+        self.assertEqual(stats["clientes_inativos_30"], 1)
+        self.assertIn("total_points_circulation", stats)
 
 
 if __name__ == "__main__":
