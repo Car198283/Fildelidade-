@@ -35,7 +35,8 @@ def movimentar_pontos(
             user_id=current_user.id,
             origem="api",
             motivo=body.motivo,
-            idempotency_key=idempotency_key
+            idempotency_key=idempotency_key,
+            valor_compra=body.valor_compra
         )
         
         return {

@@ -15,6 +15,98 @@ class DashboardService:
         return float(value or 0)
 
     @staticmethod
+    def get_management_analytics(db: Session, company_id: int, days: int = 30) -> dict:
+        """Indicadores acionaveis do periodo e comparacao com o periodo anterior."""
+        end = datetime.utcnow()
+        start = end - timedelta(days=days)
+        previous_start = start - timedelta(days=days)
+
+        def period_metrics(period_start: datetime, period_end: datetime) -> dict:
+            base = db.query(PointsTransaction).filter(
+                PointsTransaction.company_id == company_id,
+                PointsTransaction.created_at >= period_start,
+                PointsTransaction.created_at < period_end,
+            )
+            entries = base.filter(PointsTransaction.tipo == "entrada")
+            exits = base.filter(PointsTransaction.tipo == "saida")
+            active = entries.with_entities(PointsTransaction.customer_id).distinct().count()
+            returning = db.query(PointsTransaction.customer_id).filter(
+                PointsTransaction.company_id == company_id,
+                PointsTransaction.tipo == "entrada",
+                PointsTransaction.created_at >= period_start,
+                PointsTransaction.created_at < period_end,
+            ).group_by(PointsTransaction.customer_id).having(func.count(PointsTransaction.id) >= 2).count()
+            purchases = entries.count()
+            revenue = entries.with_entities(func.sum(PointsTransaction.valor_compra)).scalar() or 0
+            distributed = entries.with_entities(func.sum(PointsTransaction.pontos)).scalar() or 0
+            redeemed = exits.with_entities(func.sum(PointsTransaction.pontos)).scalar() or 0
+            new_customers = db.query(func.count(Customer.id)).filter(
+                Customer.company_id == company_id,
+                Customer.created_at >= period_start,
+                Customer.created_at < period_end,
+            ).scalar() or 0
+            return {
+                "clientes_ativos": active,
+                "clientes_recorrentes": returning,
+                "taxa_retorno": round((returning / active * 100) if active else 0, 2),
+                "novos_clientes": new_customers,
+                "movimentacoes": base.count(),
+                "compras": purchases,
+                "faturamento_registrado": DashboardService._number(revenue),
+                "ticket_medio": round(DashboardService._number(revenue) / purchases, 2) if purchases else 0,
+                "pontos_distribuidos": DashboardService._number(distributed),
+                "pontos_resgatados": DashboardService._number(redeemed),
+                "taxa_resgate": round((DashboardService._number(redeemed) / DashboardService._number(distributed) * 100) if distributed else 0, 2),
+            }
+
+        current = period_metrics(start, end)
+        previous = period_metrics(previous_start, start)
+
+        def variation(current_value: float, previous_value: float) -> float | None:
+            if not previous_value:
+                return None if not current_value else 100.0
+            return round(((current_value - previous_value) / previous_value) * 100, 2)
+
+        comparison = {key: variation(current[key], previous[key]) for key in current}
+        transactions = db.query(PointsTransaction).filter(
+            PointsTransaction.company_id == company_id,
+            PointsTransaction.created_at >= start,
+            PointsTransaction.created_at < end,
+        ).order_by(PointsTransaction.created_at.asc()).all()
+        daily = {}
+        for transaction in transactions:
+            key = transaction.created_at.date().isoformat()
+            item = daily.setdefault(key, {"data": key, "distribuidos": 0.0, "resgatados": 0.0, "faturamento": 0.0})
+            if transaction.tipo == "entrada":
+                item["distribuidos"] += DashboardService._number(transaction.pontos)
+                item["faturamento"] += DashboardService._number(transaction.valor_compra)
+            else:
+                item["resgatados"] += DashboardService._number(transaction.pontos)
+
+        inactivity = {
+            str(window): len(DashboardService.get_clientes_inativos(db, company_id, window, 10000))
+            for window in (15, 30, 60)
+        }
+        actions = []
+        if inactivity["15"]:
+            actions.append({"tipo": "reativacao", "prioridade": "alta", "texto": f"Reativar {inactivity['15']} cliente(s) sem compra ha 15 dias."})
+        if current["taxa_resgate"] < 10 and current["pontos_distribuidos"] > 0:
+            actions.append({"tipo": "resgate", "prioridade": "media", "texto": "Estimular resgates: menos de 10% dos pontos do periodo foram resgatados."})
+        if current["novos_clientes"] == 0:
+            actions.append({"tipo": "captacao", "prioridade": "media", "texto": "Nenhum cliente novo no periodo; revisar campanha de captacao."})
+
+        return {
+            "periodo_dias": days,
+            "atual": current,
+            "anterior": previous,
+            "variacao_percentual": comparison,
+            "inativos": inactivity,
+            "serie_diaria": list(daily.values()),
+            "acoes_recomendadas": actions,
+            "observacao_financeira": "Metricas financeiras consideram apenas compras com valor informado.",
+        }
+
+    @staticmethod
     def _get_default_points_target(db: Session, company_id: int) -> float:
         promocoes = db.query(PromotionConfig).filter(
             PromotionConfig.company_id == company_id,
@@ -81,7 +173,7 @@ class DashboardService:
         )
 
         def contar_clientes_inativos(dias: int) -> int:
-            data_limite = datetime.now() - timedelta(days=dias)
+            data_limite = datetime.utcnow() - timedelta(days=dias)
             return db.query(func.count(Customer.id)).filter(
                 Customer.company_id == company_id,
                 Customer.ativo == True,
@@ -147,7 +239,7 @@ class DashboardService:
         """Retorna clientes que nao compram ha X dias"""
 
         try:
-            data_limite = datetime.now() - timedelta(days=dias)
+            data_limite = datetime.utcnow() - timedelta(days=dias)
 
             clientes_inativos = db.query(Customer).filter(
                 Customer.company_id == company_id,

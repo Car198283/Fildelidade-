@@ -124,6 +124,8 @@ export const promotionService = {
 export const dashboardService = {
   stats: () => api.get("/dashboard/stats"),
 
+  analytics: (days = 30) => api.get("/dashboard/analytics", { params: { days } }),
+
   topCustomers: (limit = 10) =>
     api.get("/dashboard/top-customers", { params: { limit } }),
 

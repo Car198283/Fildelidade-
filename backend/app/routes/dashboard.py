@@ -10,6 +10,15 @@ from app.utils.dependencies import get_current_user, get_effective_company_id
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
+@router.get("/analytics")
+def obter_analytics(
+    days: int = Query(30, ge=7, le=365),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_effective_company_id),
+):
+    return {"success": True, "data": DashboardService.get_management_analytics(db, company_id, days)}
+
 @router.get("/stats")
 def obter_stats(
     db: Session = Depends(get_db),

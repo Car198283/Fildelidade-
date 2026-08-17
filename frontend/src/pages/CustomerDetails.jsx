@@ -12,6 +12,7 @@ export default function CustomerDetails() {
   const [loading, setLoading] = useState(true);
   const [pointsForm, setPointsForm] = useState({
     pontos: "",
+    valor_compra: "",
     tipo: "entrada",
     product_id: "",
     descricao: "",
@@ -52,9 +53,10 @@ export default function CustomerDetails() {
         product_id: pointsForm.product_id ? Number(pointsForm.product_id) : null,
         descricao: pointsForm.descricao,
         motivo: pointsForm.descricao.trim() || "Movimentacao manual no cadastro do cliente",
+        valor_compra: pointsForm.valor_compra ? Number(pointsForm.valor_compra) : null,
       });
 
-      setPointsForm({ pontos: "", tipo: "entrada", product_id: "", descricao: "" });
+      setPointsForm({ pontos: "", valor_compra: "", tipo: "entrada", product_id: "", descricao: "" });
       fetchCustomer();
     } catch (err) {
       alert(err.response?.data?.detail || "Erro ao movimentar pontos");
@@ -108,6 +110,15 @@ export default function CustomerDetails() {
               setPointsForm({ ...pointsForm, pontos: e.target.value })
             }
             required
+            step="0.01"
+            min="0"
+          />
+
+          <input
+            type="number"
+            placeholder="Valor da compra (R$)"
+            value={pointsForm.valor_compra}
+            onChange={(e) => setPointsForm({ ...pointsForm, valor_compra: e.target.value })}
             step="0.01"
             min="0"
           />

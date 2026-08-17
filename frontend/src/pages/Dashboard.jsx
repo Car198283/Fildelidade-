@@ -9,6 +9,8 @@ import "./Dashboard.css";
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [periodDays, setPeriodDays] = useState(30);
   const [topCustomers, setTopCustomers] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [clientesPremiadosCompleto, setClientesPremiadosCompleto] = useState(
@@ -63,8 +65,9 @@ export default function Dashboard() {
         companyRequest = Promise.resolve(companiesRes);
       }
 
-      const [statsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.allSettled([
+      const [statsRes, analyticsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.allSettled([
         dashboardService.stats(),
+        dashboardService.analytics(periodDays),
         dashboardService.topCustomers(10),
         dashboardService.topProducts(10),
         dashboardService.clientesPremiadosCompleto(),
@@ -73,6 +76,7 @@ export default function Dashboard() {
       ]);
 
       if (statsRes.status === "fulfilled") setStats(statsRes.value.data.data);
+      if (analyticsRes.status === "fulfilled") setAnalytics(analyticsRes.value.data.data);
       if (topRes.status === "fulfilled") setTopCustomers(topRes.value.data.data);
       if (productsRes.status === "fulfilled") setTopProducts(productsRes.value.data.data);
       if (premiadosRes.status === "fulfilled") {
@@ -89,7 +93,7 @@ export default function Dashboard() {
           companies.find((company) => String(company.id) === localStorage.getItem("selectedCompanyId")) || null,
         );
       } else {
-        const me = companyRes.data?.data || {};
+        const me = companyRes.status === "fulfilled" ? companyRes.value.data?.data || {} : {};
         setCurrentCompany({
           id: me.company_id,
           nome: me.company_name || "Minha empresa",
@@ -105,7 +109,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [periodDays]);
 
   const handleCompanyChange = (event) => {
     const companyId = event.target.value;
@@ -242,6 +246,72 @@ export default function Dashboard() {
           <span className="dashboard-status">Somente leitura</span>
         )}
       </div>
+
+      <div className="management-toolbar">
+        <div>
+          <strong>Visao gerencial</strong>
+          <span> Compare o desempenho com o periodo anterior</span>
+        </div>
+        <select value={periodDays} onChange={(event) => setPeriodDays(Number(event.target.value))}>
+          <option value={7}>Ultimos 7 dias</option>
+          <option value={30}>Ultimos 30 dias</option>
+          <option value={90}>Ultimos 90 dias</option>
+          <option value={365}>Ultimos 12 meses</option>
+        </select>
+      </div>
+
+      {analytics && (
+        <>
+          <div className="management-grid">
+            {[
+              ["Clientes ativos", analytics.atual.clientes_ativos, "clientes_ativos"],
+              ["Novos clientes", analytics.atual.novos_clientes, "novos_clientes"],
+              ["Taxa de retorno", `${analytics.atual.taxa_retorno}%`, "taxa_retorno"],
+              ["Taxa de resgate", `${analytics.atual.taxa_resgate}%`, "taxa_resgate"],
+              ["Movimentacoes", analytics.atual.movimentacoes, "movimentacoes"],
+              ["Ticket medio", `R$ ${analytics.atual.ticket_medio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "ticket_medio"],
+              ["Faturamento registrado", `R$ ${analytics.atual.faturamento_registrado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "faturamento_registrado"],
+              ["Sem compra 60+ dias", analytics.inativos["60"], null],
+            ].map(([label, value, key]) => (
+              <div className="management-card" key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+                {key && analytics.variacao_percentual[key] !== null && (
+                  <small className={analytics.variacao_percentual[key] >= 0 ? "positive" : "negative"}>
+                    {analytics.variacao_percentual[key] >= 0 ? "▲" : "▼"} {Math.abs(analytics.variacao_percentual[key])}% vs. periodo anterior
+                  </small>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="management-panels">
+            <section className="decision-panel">
+              <h2>Evolucao do periodo</h2>
+              <div className="trend-chart">
+                {analytics.serie_diaria.length === 0 ? <p className="vazio">Sem movimentacoes no periodo</p> : analytics.serie_diaria.map((item) => {
+                  const max = Math.max(...analytics.serie_diaria.map((row) => Math.max(row.distribuidos, row.resgatados)), 1);
+                  return <div className="trend-column" key={item.data} title={`${item.data}: ${item.distribuidos} distribuidos / ${item.resgatados} resgatados`}>
+                    <div className="trend-bars">
+                      <i className="distributed" style={{ height: `${Math.max(item.distribuidos / max * 100, 3)}%` }} />
+                      <i className="redeemed" style={{ height: `${Math.max(item.resgatados / max * 100, 3)}%` }} />
+                    </div>
+                    <small>{item.data.slice(5)}</small>
+                  </div>;
+                })}
+              </div>
+              <p className="chart-legend"><span>■ Distribuidos</span><span>■ Resgatados</span></p>
+            </section>
+            <section className="decision-panel actions-panel">
+              <h2>Acoes recomendadas</h2>
+              {analytics.acoes_recomendadas.length === 0 ? <p className="vazio">Nenhuma acao urgente no periodo.</p> : analytics.acoes_recomendadas.map((action) => (
+                <div className={`recommended-action ${action.prioridade}`} key={`${action.tipo}-${action.texto}`}>{action.texto}</div>
+              ))}
+              <small>{analytics.observacao_financeira}</small>
+            </section>
+          </div>
+        </>
+      )}
 
       {stats && (
         <div className="stats-grid">

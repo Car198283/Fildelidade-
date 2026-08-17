@@ -361,6 +361,27 @@ table tr:hover {
   background: #1976d2;
 }
 
+.management-toolbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 18px; margin-top:22px; background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.management-toolbar span { color:#64748b; }
+.management-toolbar select { padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; }
+.management-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin:16px 0 24px; }
+.management-card { background:#fff; border-radius:12px; padding:17px; border-top:4px solid #667eea; box-shadow:0 2px 8px rgba(0,0,0,.07); }
+.management-card span { display:block; color:#64748b; font-size:13px; font-weight:700; }
+.management-card strong { display:block; margin:8px 0; font-size:25px; color:#1e293b; }
+.management-card small.positive { color:#15803d; } .management-card small.negative { color:#dc2626; }
+.management-panels { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:28px; }
+.decision-panel { background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.trend-chart { display:flex; align-items:flex-end; gap:7px; height:210px; overflow-x:auto; padding-top:15px; }
+.trend-column { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; min-width:34px; height:100%; }
+.trend-bars { display:flex; align-items:flex-end; gap:3px; height:170px; width:24px; }
+.trend-bars i { display:block; width:10px; min-height:3px; border-radius:4px 4px 0 0; }
+.trend-bars .distributed { background:#667eea; } .trend-bars .redeemed { background:#f97316; }
+.trend-column small { font-size:9px; color:#64748b; transform:rotate(-45deg); margin-top:10px; }
+.chart-legend { display:flex; gap:20px; color:#64748b; font-size:12px; }
+.recommended-action { padding:12px; border-left:4px solid #f59e0b; background:#fffbeb; border-radius:7px; margin:10px 0; }
+.recommended-action.alta { border-color:#ef4444; background:#fef2f2; }
+@media (max-width: 800px) { .management-panels { grid-template-columns:1fr; } .management-toolbar { align-items:flex-start; flex-direction:column; } }
+
 .btn.btn-redeem {
   background: #16a34a;
   color: white;

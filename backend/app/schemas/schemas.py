@@ -165,6 +165,7 @@ class PointsTransactionCreate(BaseModel):
     descricao: Optional[str] = None
     product_id: Optional[int] = None
     motivo: str = Field(..., min_length=1, max_length=500)
+    valor_compra: Optional[float] = Field(None, ge=0)
 
 class PointsTransactionResponse(BaseModel):
     id: int

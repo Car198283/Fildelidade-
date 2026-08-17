@@ -13,6 +13,7 @@ const emptyCustomerForm = {
 
 const emptyPointsForm = {
   pontos: "",
+  valor_compra: "",
   product_id: "",
   descricao: "",
 };
@@ -200,6 +201,7 @@ export default function MobileCapture() {
         descricao: pointsForm.descricao.trim() || "Compra",
         motivo: pointsForm.descricao.trim() || "Compra registrada na captura mobile",
         product_id: pointsForm.product_id ? Number(pointsForm.product_id) : null,
+        valor_compra: pointsForm.valor_compra ? Number(pointsForm.valor_compra) : null,
       });
 
       showMessage(`${formatPoints(pontos)} pontos lancados com sucesso.`);
@@ -409,6 +411,18 @@ export default function MobileCapture() {
                 inputMode="decimal"
                 step="1"
                 min="1"
+              />
+
+              <input
+                type="number"
+                placeholder="Valor da compra (R$)"
+                value={pointsForm.valor_compra}
+                onChange={(event) =>
+                  setPointsForm({ ...pointsForm, valor_compra: event.target.value })
+                }
+                inputMode="decimal"
+                step="0.01"
+                min="0"
               />
 
               <select
