@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import SessionLocal
@@ -5,6 +7,8 @@ from app.models import Company, User
 from app.routes import admin, auth, customers, points, products, dashboard, promotions, reports, mobile, integrations
 from app.config import settings
 from app.services.auth_service import AuthService
+
+logger = logging.getLogger("uvicorn.error")
 
 # Inicializa app ANTES de criar tabelas (para evitar erro)
 app = FastAPI(
@@ -24,6 +28,11 @@ app.add_middleware(
 
 # Bootstrap opcional; o schema deve existir após `alembic upgrade head`.
 try:
+    logger.info(
+        "[MASTER_BOOTSTRAP] configuracao email=%s password=%s",
+        bool(settings.master_email),
+        bool(settings.master_password),
+    )
     if settings.master_email and settings.master_password:
         db = SessionLocal()
         try:
@@ -32,6 +41,14 @@ try:
                 company = Company(nome="Master", plano="enterprise", ativo=True)
                 db.add(company)
                 db.flush()
+                logger.info("[MASTER_BOOTSTRAP] empresa_master criada company_id=%s", company.id)
+            else:
+                logger.info(
+                    "[MASTER_BOOTSTRAP] empresa_master localizada company_id=%s ativo=%s read_only=%s",
+                    company.id,
+                    company.ativo,
+                    company.read_only,
+                )
 
             user = db.query(User).filter(User.email == settings.master_email).first()
             senha_hash = AuthService.hash_password(settings.master_password)
@@ -44,15 +61,39 @@ try:
                     ativo=True,
                 )
                 db.add(user)
+                logger.info("[MASTER_BOOTSTRAP] usuario_master novo")
             else:
+                logger.info(
+                    "[MASTER_BOOTSTRAP] usuario_master localizado user_id=%s company_id_anterior=%s "
+                    "role_anterior=%s ativo_anterior=%s",
+                    user.id,
+                    user.company_id,
+                    user.role,
+                    user.ativo,
+                )
                 user.senha_hash = senha_hash
                 user.company_id = company.id
                 user.role = "master"
                 user.ativo = True
             db.commit()
+            db.refresh(user)
+            db.refresh(company)
+            logger.info(
+                "[MASTER_BOOTSTRAP] concluido user_id=%s company_id=%s role=%s usuario_ativo=%s "
+                "empresa_ativa=%s read_only=%s hash_atualizado=true",
+                user.id,
+                user.company_id,
+                user.role,
+                user.ativo,
+                company.ativo,
+                company.read_only,
+            )
         finally:
             db.close()
+    else:
+        logger.warning("[MASTER_BOOTSTRAP] ignorado: MASTER_EMAIL ou MASTER_PASSWORD ausente")
 except Exception as e:
+    logger.exception("[MASTER_BOOTSTRAP] falhou antes da inicializacao da API")
     raise RuntimeError("Falha no bootstrap; confirme as migracoes e os secrets") from e
 
 # Routes
