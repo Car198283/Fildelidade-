@@ -113,6 +113,7 @@ def criar_empresa(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_master),
 ):
+    # tenant-scope: global - email e unico em todo o sistema.
     existing_user = db.query(User).filter(User.email == body.admin_email).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email do administrador ja cadastrado")
@@ -332,6 +333,7 @@ def criar_usuario(
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa nao encontrada")
 
+    # tenant-scope: global - email e unico em todo o sistema.
     existing = db.query(User).filter(User.email == body.email).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email ja cadastrado")
@@ -360,6 +362,7 @@ def atualizar_usuario(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
 ):
+    # tenant-scope: global - master pode gerir empresas; autorizacao ocorre abaixo.
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario nao encontrado")
@@ -411,6 +414,7 @@ def excluir_usuario(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
 ):
+    # tenant-scope: global - master pode gerir empresas; autorizacao ocorre abaixo.
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario nao encontrado")

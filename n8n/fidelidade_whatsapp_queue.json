@@ -1,0 +1,84 @@
+{
+  "name": "Fidelidade Total - Fila WhatsApp",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 1 }] } },
+      "id": "schedule",
+      "name": "A cada minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FIDELIDADE_API_URL + '/integracoes/n8n/whatsapp/fila/consumir' }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "X-N8N-Secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+          { "name": "X-Company-Id", "value": "={{ $env.FIDELIDADE_COMPANY_ID }}" }
+        ] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"limit\": 20}"
+      },
+      "id": "consume",
+      "name": "Reservar fila",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": { "fieldToSplitOut": "data", "options": {} },
+      "id": "split",
+      "name": "Separar mensagens",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ 'Bearer ' + $env.WHATSAPP_API_TOKEN }}" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"to\": $json.telefone, \"message\": $json.mensagem } }}"
+      },
+      "id": "send",
+      "name": "Enviar no provedor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FIDELIDADE_API_URL + '/integracoes/n8n/whatsapp/fila/' + $('Separar mensagens').item.json.id + '/callback' }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [
+          { "name": "X-N8N-Secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" },
+          { "name": "X-Company-Id", "value": "={{ $env.FIDELIDADE_COMPANY_ID }}" }
+        ] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"status\": \"enviado\", \"provider_message_id\": $json.id || $json.messageId || \"\" } }}"
+      },
+      "id": "callback",
+      "name": "Confirmar envio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 0]
+    }
+  ],
+  "connections": {
+    "A cada minuto": { "main": [[{ "node": "Reservar fila", "type": "main", "index": 0 }]] },
+    "Reservar fila": { "main": [[{ "node": "Separar mensagens", "type": "main", "index": 0 }]] },
+    "Separar mensagens": { "main": [[{ "node": "Enviar no provedor", "type": "main", "index": 0 }]] },
+    "Enviar no provedor": { "main": [[{ "node": "Confirmar envio", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "versionId": "00000000-0000-4000-8000-000000000001"
+}

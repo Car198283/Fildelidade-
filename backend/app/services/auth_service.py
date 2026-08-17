@@ -61,6 +61,7 @@ class AuthService:
         """Registra nova empresa + admin"""
         
         # Verifica se email já existe
+        # tenant-scope: global - email e unico em todo o sistema.
         existing_user = db.query(User).filter(User.email == email).first()
         if existing_user:
             raise ValueError("Email já registrado")
@@ -118,6 +119,7 @@ class AuthService:
             settings.master_email
             and email.strip().casefold() == settings.master_email.strip().casefold()
         )
+        # tenant-scope: global - login precisa localizar a empresa pelo email unico.
         user = db.query(User).filter(User.email == email, User.ativo == True).first()
         if not user:
             logger.warning(

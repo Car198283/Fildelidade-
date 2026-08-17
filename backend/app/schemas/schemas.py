@@ -311,8 +311,13 @@ class WhatsAppQueueGenerate(BaseModel):
     tipo: str = Field(..., min_length=1, max_length=50)
     mensagem_template: str = Field(..., min_length=1)
     customer_id: Optional[int] = None
+    scheduled_at: Optional[datetime] = None
+    max_attempts: int = Field(3, ge=1, le=10)
 
 class WhatsAppMessageStatusUpdate(BaseModel):
-    status: str = Field(..., min_length=1, max_length=30)
+    status: str = Field(..., pattern="^(enviado|entregue|lido|erro|cancelado)$")
     provider_message_id: Optional[str] = None
     erro: Optional[str] = None
+
+class N8nWhatsAppConsume(BaseModel):
+    limit: int = Field(20, ge=1, le=100)
