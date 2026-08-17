@@ -59,6 +59,18 @@ class PointsIntegrityTestCase(unittest.TestCase):
         self.assertEqual(stats["clientes_inativos_30"], 1)
         self.assertIn("total_points_circulation", stats)
 
+    def test_analytics_calcula_valor_e_comparacao(self):
+        PointsService.movimentar_pontos(
+            self.db, self.customer_id, self.company_id, 10, "entrada", "Compra",
+            user_id=self.user_id, origem="test", motivo="Compra", idempotency_key="analytics-12345",
+            valor_compra=50,
+        )
+        analytics = DashboardService.get_management_analytics(self.db, self.company_id, 30)
+        self.assertEqual(analytics["atual"]["clientes_ativos"], 1)
+        self.assertEqual(analytics["atual"]["faturamento_registrado"], 50.0)
+        self.assertEqual(analytics["atual"]["ticket_medio"], 50.0)
+        self.assertTrue(analytics["serie_diaria"])
+
 
 if __name__ == "__main__":
     unittest.main()

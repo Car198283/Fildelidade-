@@ -13,6 +13,7 @@ class PointsTransaction(Base, TimestampMixin):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=True, index=True)
     product_nome = Column(String(255), nullable=True)
     pontos = Column(Numeric(12, 2), nullable=False)  # Valor da transacao
+    valor_compra = Column(Numeric(12, 2), nullable=True)
     tipo = Column(String(20), nullable=False)  # "entrada" ou "saida"
     descricao = Column(String(255), nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)

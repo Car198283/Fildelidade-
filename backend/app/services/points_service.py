@@ -24,7 +24,8 @@ class PointsService:
         user_id: int = None,
         origem: str = "api",
         motivo: str = None,
-        idempotency_key: str = None
+        idempotency_key: str = None,
+        valor_compra: float = None
     ) -> Tuple[PointsTransaction, Customer]:
         """
         Função central de movimentação de pontos
@@ -110,7 +111,8 @@ class PointsService:
             user_id=user_id,
             origem=origem,
             motivo=motivo,
-            idempotency_key=idempotency_key
+            idempotency_key=idempotency_key,
+            valor_compra=Decimal(str(valor_compra)) if valor_compra is not None else None
         )
         db.add(transaction)
         
