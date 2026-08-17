@@ -4,7 +4,6 @@ from typing import Optional
 from sqlalchemy import cast, extract, func, Integer
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models import Customer, PointsTransaction, PromotionConfig
 
 
@@ -81,21 +80,25 @@ class DashboardService:
             if DashboardService._number(cliente.pontos) >= DashboardService._get_customer_points_target(cliente, max_pontos)
         )
 
-        data_limite = datetime.now() - timedelta(days=15)
-        clientes_inativos = db.query(func.count(Customer.id)).filter(
-            Customer.company_id == company_id,
-            Customer.ativo == True,
-            ~Customer.id.in_(
-                db.query(PointsTransaction.customer_id).filter(
-                    PointsTransaction.company_id == company_id,
-                    PointsTransaction.created_at >= data_limite
+        def contar_clientes_inativos(dias: int) -> int:
+            data_limite = datetime.now() - timedelta(days=dias)
+            return db.query(func.count(Customer.id)).filter(
+                Customer.company_id == company_id,
+                Customer.ativo == True,
+                ~Customer.id.in_(
+                    db.query(PointsTransaction.customer_id).filter(
+                        PointsTransaction.company_id == company_id,
+                        PointsTransaction.created_at >= data_limite
+                    )
                 )
-            )
-        ).scalar() or 0
+            ).scalar() or 0
+
+        clientes_inativos_15 = contar_clientes_inativos(15)
+        clientes_inativos_30 = contar_clientes_inativos(30)
 
         mes_atual = datetime.now().month
 
-        if settings.db_type.lower() == "postgresql":
+        if db.bind.dialect.name == "postgresql":
             aniversariantes = db.query(func.count(Customer.id)).filter(
                 Customer.company_id == company_id,
                 Customer.ativo == True,
@@ -128,7 +131,9 @@ class DashboardService:
         return {
             "total_clientes": total_customers,
             "clientes_premiados": clientes_premiados,
-            "clientes_inativos": clientes_inativos,
+            "clientes_inativos": clientes_inativos_15,
+            "clientes_inativos_15": clientes_inativos_15,
+            "clientes_inativos_30": clientes_inativos_30,
             "aniversariantes_mes": aniversariantes,
             "total_points_distributed": DashboardService._number(total_points_distributed),
             "total_points_redeemed": DashboardService._number(total_points_redeemed),
@@ -176,7 +181,7 @@ class DashboardService:
         if mes is None:
             mes = datetime.now().month
 
-        if settings.db_type.lower() == "postgresql":
+        if db.bind.dialect.name == "postgresql":
             month_filter = extract("month", Customer.data_nascimento) == mes
             day_order = extract("day", Customer.data_nascimento)
         else:
@@ -209,7 +214,7 @@ class DashboardService:
 
         hoje = datetime.now()
 
-        if settings.db_type.lower() == "postgresql":
+        if db.bind.dialect.name == "postgresql":
             month_filter = extract("month", Customer.data_nascimento) == hoje.month
             day_filter = extract("day", Customer.data_nascimento) == hoje.day
         else:

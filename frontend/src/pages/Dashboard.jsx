@@ -63,7 +63,7 @@ export default function Dashboard() {
         companyRequest = Promise.resolve(companiesRes);
       }
 
-      const [statsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.all([
+      const [statsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.allSettled([
         dashboardService.stats(),
         dashboardService.topCustomers(10),
         dashboardService.topProducts(10),
@@ -72,14 +72,18 @@ export default function Dashboard() {
         companyRequest,
       ]);
 
-      setStats(statsRes.data.data);
-      setTopCustomers(topRes.data.data);
-      setTopProducts(productsRes.data.data);
-      setClientesPremiadosCompleto(premiadosRes.data.data);
-      setClientesQuasePremiados(quaseRes.data.data);
+      if (statsRes.status === "fulfilled") setStats(statsRes.value.data.data);
+      if (topRes.status === "fulfilled") setTopCustomers(topRes.value.data.data);
+      if (productsRes.status === "fulfilled") setTopProducts(productsRes.value.data.data);
+      if (premiadosRes.status === "fulfilled") {
+        setClientesPremiadosCompleto(premiadosRes.value.data.data);
+      }
+      if (quaseRes.status === "fulfilled") {
+        setClientesQuasePremiados(quaseRes.value.data.data);
+      }
 
       if (user.role === "master") {
-        const companies = companyRes.data?.data || [];
+        const companies = companyRes.status === "fulfilled" ? companyRes.value.data?.data || [] : [];
         setCompanies(companies);
         setCurrentCompany(
           companies.find((company) => String(company.id) === localStorage.getItem("selectedCompanyId")) || null,
@@ -257,8 +261,13 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card danger">
-            <h3>⚠️ Inativos (15+ dias)</h3>
-            <p className="stat-value">{stats.clientes_inativos}</p>
+            <h3>⚠️ Sem compras (15+ dias)</h3>
+            <p className="stat-value">{stats.clientes_inativos_15 ?? stats.clientes_inativos}</p>
+          </div>
+
+          <div className="stat-card danger">
+            <h3>🚨 Sem compras (30+ dias)</h3>
+            <p className="stat-value">{stats.clientes_inativos_30 ?? 0}</p>
           </div>
 
           <div className="stat-card birthday">
