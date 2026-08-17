@@ -24,22 +24,22 @@ import WhatsAppIntegration from "./pages/WhatsAppIntegration";
 import "./App.css";
 
 function getStoredUser() {
-  const rawUser = localStorage.getItem("user");
+  const rawUser = sessionStorage.getItem("user");
   if (!rawUser) return {};
 
   try {
     return JSON.parse(rawUser);
   } catch {
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
     return {};
   }
 }
 
 function PrivateRoute({ children, roles = [] }) {
-  const token = localStorage.getItem("accessToken");
+  const token = sessionStorage.getItem("accessToken");
   const location = useLocation();
   const user = getStoredUser();
-  const mobileCaptureOnly = localStorage.getItem("mobileCaptureOnly") === "1";
+  const mobileCaptureOnly = sessionStorage.getItem("mobileCaptureOnly") === "1";
 
   if (!token) {
     return (
@@ -70,10 +70,10 @@ function ProtectedLayout({ children }) {
   const isMaster = user.role === "master";
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("selectedCompanyId");
-    localStorage.removeItem("mobileCaptureOnly");
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("selectedCompanyId");
+    sessionStorage.removeItem("mobileCaptureOnly");
     window.location.href = "/login";
   };
 
@@ -118,7 +118,7 @@ function ProtectedLayout({ children }) {
 }
 
 function MobileCaptureEntry() {
-  localStorage.setItem("mobileCaptureOnly", "1");
+  sessionStorage.setItem("mobileCaptureOnly", "1");
   return <Navigate to="/captura" replace />;
 }
 

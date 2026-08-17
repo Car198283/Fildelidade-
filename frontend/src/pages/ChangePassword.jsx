@@ -15,9 +15,9 @@ export default function ChangePassword() {
     try {
       setLoading(true); setError("");
       await authService.changePassword(form.current, form.next);
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const user = JSON.parse(sessionStorage.getItem("user") || "{}");
       user.exigir_troca_senha = false;
-      localStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("user", JSON.stringify(user));
       navigate(user.role === "admin" || user.role === "master" ? "/dashboard" : "/captura");
     } catch (err) { setError(err.response?.data?.detail || "Nao foi possivel alterar a senha."); }
     finally { setLoading(false); }

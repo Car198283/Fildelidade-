@@ -30,8 +30,8 @@ export default function Login() {
       const response = await authService.login(form.email, form.password);
 
       // Salva token e usuário
-      localStorage.setItem("accessToken", response.data.data.access_token);
-      localStorage.setItem("user", JSON.stringify(response.data.data));
+      sessionStorage.setItem("accessToken", response.data.data.access_token);
+      sessionStorage.setItem("user", JSON.stringify(response.data.data));
 
       if (response.data.data.exigir_troca_senha) {
         navigate("/trocar-senha");
@@ -40,7 +40,7 @@ export default function Login() {
 
       const nextPath = searchParams.get("next");
       if (nextPath === "/celular" || nextPath === "/captura") {
-        localStorage.setItem("mobileCaptureOnly", "1");
+        sessionStorage.setItem("mobileCaptureOnly", "1");
       }
 
       if (nextPath?.startsWith("/")) {

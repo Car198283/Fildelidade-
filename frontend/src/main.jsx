@@ -14,8 +14,8 @@ class ErrorBoundary extends React.Component {
   }
 
   resetSession = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("user");
     window.location.href = "/login";
   };
 

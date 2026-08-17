@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [currentCompany, setCurrentCompany] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState(
-    localStorage.getItem("selectedCompanyId") || "",
+    sessionStorage.getItem("selectedCompanyId") || "",
   );
   const [loading, setLoading] = useState(true);
   const [editingCliente, setEditingCliente] = useState(null);
@@ -34,14 +34,14 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const user = JSON.parse(sessionStorage.getItem("user") || "{}");
       let companyRequest = adminService.me();
 
       if (user.role === "master") {
         const companiesRes = await adminService.companies();
         const companyList = companiesRes.data?.data || [];
         const storedCompanyId =
-          localStorage.getItem("selectedCompanyId") || selectedCompanyId;
+          sessionStorage.getItem("selectedCompanyId") || selectedCompanyId;
         const selectedCompany =
           companyList.find(
             (company) =>
@@ -57,9 +57,9 @@ export default function Dashboard() {
         if (selectedCompany) {
           const nextCompanyId = String(selectedCompany.id);
           setSelectedCompanyId(nextCompanyId);
-          localStorage.setItem("selectedCompanyId", nextCompanyId);
+          sessionStorage.setItem("selectedCompanyId", nextCompanyId);
         } else {
-          localStorage.removeItem("selectedCompanyId");
+          sessionStorage.removeItem("selectedCompanyId");
         }
 
         companyRequest = Promise.resolve(companiesRes);
@@ -90,7 +90,7 @@ export default function Dashboard() {
         const companies = companyRes.status === "fulfilled" ? companyRes.value.data?.data || [] : [];
         setCompanies(companies);
         setCurrentCompany(
-          companies.find((company) => String(company.id) === localStorage.getItem("selectedCompanyId")) || null,
+          companies.find((company) => String(company.id) === sessionStorage.getItem("selectedCompanyId")) || null,
         );
       } else {
         const me = companyRes.status === "fulfilled" ? companyRes.value.data?.data || {} : {};
@@ -114,7 +114,7 @@ export default function Dashboard() {
   const handleCompanyChange = (event) => {
     const companyId = event.target.value;
     setSelectedCompanyId(companyId);
-    localStorage.setItem("selectedCompanyId", companyId);
+    sessionStorage.setItem("selectedCompanyId", companyId);
     setCurrentCompany(
       companies.find((company) => String(company.id) === String(companyId)) || null,
     );
@@ -215,7 +215,7 @@ export default function Dashboard() {
   if (loading) return <div className="loading">Carregando...</div>;
 
   const totalClientes = stats?.total_clientes ?? stats?.total_customers ?? 0;
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(sessionStorage.getItem("user") || "{}");
   const isMaster = user.role === "master";
 
   return (

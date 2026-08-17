@@ -34,7 +34,7 @@ export default function Register() {
       );
 
       // Salva dados
-      localStorage.setItem("user", JSON.stringify(response.data.data));
+      sessionStorage.setItem("user", JSON.stringify(response.data.data));
 
       // Vai para login
       navigate("/login");

@@ -36,7 +36,7 @@ function formatPoints(value) {
 
 function getStoredUser() {
   try {
-    return JSON.parse(localStorage.getItem("user") || "{}");
+    return JSON.parse(sessionStorage.getItem("user") || "{}");
   } catch {
     return {};
   }
@@ -72,9 +72,9 @@ export default function MobileCapture() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("mobileCaptureOnly");
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("mobileCaptureOnly");
     window.location.href = "/login?next=/captura";
   };
 

@@ -10,7 +10,7 @@ const roleDescriptions = {
   observador: "Consulta informacoes permitidas, sem alterar dados.",
 };
 
-function storedUser() { try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; } }
+function storedUser() { try { return JSON.parse(sessionStorage.getItem("user") || "{}"); } catch { return {}; } }
 function formatDate(value) { return value ? new Date(value).toLocaleString("pt-BR") : "Nunca acessou"; }
 
 export default function UserManagement() {
@@ -18,7 +18,7 @@ export default function UserManagement() {
   const isMaster = currentUser.role === "master";
   const [users, setUsers] = useState([]);
   const [companies, setCompanies] = useState([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(localStorage.getItem("selectedCompanyId") || "");
+  const [selectedCompanyId, setSelectedCompanyId] = useState(sessionStorage.getItem("selectedCompanyId") || "");
   const [form, setForm] = useState(emptyForm);
   const [editingUserId, setEditingUserId] = useState(null);
   const [message, setMessage] = useState("");
@@ -53,7 +53,7 @@ export default function UserManagement() {
     if (!isMaster) return;
     adminService.companies().then((response) => {
       const data = response.data?.data || []; setCompanies(data);
-      if (!selectedCompanyId && data.length) { const id = String(data[0].id); setSelectedCompanyId(id); localStorage.setItem("selectedCompanyId", id); }
+      if (!selectedCompanyId && data.length) { const id = String(data[0].id); setSelectedCompanyId(id); sessionStorage.setItem("selectedCompanyId", id); }
     }).catch(() => setMessage("Nao foi possivel carregar empresas."));
   }, []);
   useEffect(() => { refresh().catch(() => setMessage("Nao foi possivel carregar usuarios.")); }, [selectedCompanyId, queryFilters]);
@@ -106,7 +106,7 @@ export default function UserManagement() {
   return <div className="users-page">
     <header className="users-header"><h1>Usuarios e Acessos</h1><p>Controle seguro de perfis, atividades e historico por empresa.</p></header>
     {message && <div className="users-message">{message}</div>}
-    {isMaster && <section className="users-panel"><div className="company-control"><div><label>Empresa em gestao</label><select value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); localStorage.setItem("selectedCompanyId", e.target.value); setPage(1); }}>{companies.map((company) => <option key={company.id} value={company.id}>{company.nome}</option>)}</select></div>{selectedCompany && <div className="company-status"><span className={selectedCompany.ativo ? "status-active" : "status-blocked"}>{selectedCompany.ativo ? "Ativa" : "Bloqueada"}</span><span className={selectedCompany.read_only ? "status-readonly" : "status-active"}>{selectedCompany.read_only ? "Somente leitura" : "Liberada para edicao"}</span></div>}</div>{selectedCompany && <div className="company-actions"><button className={selectedCompany.ativo ? "danger" : "success"} onClick={() => updateCompany({ ativo: !selectedCompany.ativo })}>{selectedCompany.ativo ? "Bloquear conta" : "Desbloquear conta"}</button><button disabled={!selectedCompany.ativo} onClick={() => updateCompany({ read_only: !selectedCompany.read_only })}>{selectedCompany.read_only ? "Liberar edicao" : "Somente leitura"}</button></div>}</section>}
+    {isMaster && <section className="users-panel"><div className="company-control"><div><label>Empresa em gestao</label><select value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); sessionStorage.setItem("selectedCompanyId", e.target.value); setPage(1); }}>{companies.map((company) => <option key={company.id} value={company.id}>{company.nome}</option>)}</select></div>{selectedCompany && <div className="company-status"><span className={selectedCompany.ativo ? "status-active" : "status-blocked"}>{selectedCompany.ativo ? "Ativa" : "Bloqueada"}</span><span className={selectedCompany.read_only ? "status-readonly" : "status-active"}>{selectedCompany.read_only ? "Somente leitura" : "Liberada para edicao"}</span></div>}</div>{selectedCompany && <div className="company-actions"><button className={selectedCompany.ativo ? "danger" : "success"} onClick={() => updateCompany({ ativo: !selectedCompany.ativo })}>{selectedCompany.ativo ? "Bloquear conta" : "Desbloquear conta"}</button><button disabled={!selectedCompany.ativo} onClick={() => updateCompany({ read_only: !selectedCompany.read_only })}>{selectedCompany.read_only ? "Liberar edicao" : "Somente leitura"}</button></div>}</section>}
 
     <section className="users-metrics">{[["Total", metrics.total],["Ativos", metrics.ativos],["Inativos", metrics.inativos],["Administradores", metrics.administradores]].map(([label, value]) => <article key={label}><span>{label}</span><strong>{value || 0}</strong></article>)}</section>
 

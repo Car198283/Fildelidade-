@@ -9,11 +9,11 @@ const api = axios.create({
 
 // Interceptor para adicionar token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = sessionStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  const selectedCompanyId = localStorage.getItem("selectedCompanyId");
+  const selectedCompanyId = sessionStorage.getItem("selectedCompanyId");
   if (selectedCompanyId) {
     config.headers["X-Company-Id"] = selectedCompanyId;
   }
@@ -26,8 +26,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Limpa autenticação
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("user");
+      sessionStorage.removeItem("accessToken");
+      sessionStorage.removeItem("user");
       window.location.href = "/login";
     }
     return Promise.reject(error);
