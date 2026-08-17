@@ -238,6 +238,22 @@ class PromotionConfigBase(BaseModel):
     percentual: Optional[float] = None
     descricao: Optional[str] = None
     ativo: bool = True
+    nome: Optional[str] = Field(None, max_length=120)
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    acumulavel: bool = True
+    prioridade: int = Field(0, ge=0, le=999)
+    limite_por_cliente: Optional[int] = Field(None, ge=1)
+    limite_total: Optional[int] = Field(None, ge=1)
+    valor_minimo_compra: Optional[float] = Field(None, ge=0)
+    recompensa_tipo: str = Field("pontos", pattern="^(pontos|produto|desconto_valor|desconto_percentual|multiplicador|cupom)$")
+    recompensa_valor: Optional[float] = Field(None, ge=0)
+    condicao_campo: Optional[str] = None
+    condicao_operador: Optional[str] = None
+    condicao_valor: Optional[float] = None
+    produtos_elegiveis: Optional[list[int]] = None
+    categorias_elegiveis: Optional[list[int]] = None
+    motivo_alteracao: str = Field(..., min_length=3, max_length=500)
 
 class PromotionConfigCreate(PromotionConfigBase):
     pass
@@ -251,6 +267,22 @@ class PromotionConfigUpdate(BaseModel):
     percentual: Optional[float] = None
     descricao: Optional[str] = None
     ativo: Optional[bool] = None
+    nome: Optional[str] = Field(None, max_length=120)
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    acumulavel: Optional[bool] = None
+    prioridade: Optional[int] = Field(None, ge=0, le=999)
+    limite_por_cliente: Optional[int] = Field(None, ge=1)
+    limite_total: Optional[int] = Field(None, ge=1)
+    valor_minimo_compra: Optional[float] = Field(None, ge=0)
+    recompensa_tipo: Optional[str] = Field(None, pattern="^(pontos|produto|desconto_valor|desconto_percentual|multiplicador|cupom)$")
+    recompensa_valor: Optional[float] = Field(None, ge=0)
+    condicao_campo: Optional[str] = None
+    condicao_operador: Optional[str] = None
+    condicao_valor: Optional[float] = None
+    produtos_elegiveis: Optional[list[int]] = None
+    categorias_elegiveis: Optional[list[int]] = None
+    motivo_alteracao: str = Field(..., min_length=3, max_length=500)
 
 class PromotionConfigResponse(PromotionConfigBase):
     id: int
@@ -259,6 +291,10 @@ class PromotionConfigResponse(PromotionConfigBase):
     
     class Config:
         from_attributes = True
+
+class PromotionSimulation(BaseModel):
+    compras: int = Field(0, ge=0)
+    valor_compra: float = Field(0, ge=0)
 
 # ========== WHATSAPP / N8N ==========
 

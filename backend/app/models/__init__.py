@@ -5,7 +5,7 @@ from .customer import Customer
 from .points_transaction import PointsTransaction
 from .product import Product
 from .category import Category
-from .promotion import PromotionConfig, TipoPromocao
+from .promotion import PromotionAudit, PromotionConfig, TipoPromocao
 from .whatsapp_message import WhatsAppMessage
 
 __all__ = [
@@ -18,6 +18,7 @@ __all__ = [
     'Product',
     'Category',
     'PromotionConfig',
+    'PromotionAudit',
     'TipoPromocao',
     'WhatsAppMessage',
 ]

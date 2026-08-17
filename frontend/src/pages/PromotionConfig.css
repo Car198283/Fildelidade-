@@ -2,7 +2,7 @@
 
 .promotion-config {
   padding: 20px;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -434,4 +434,22 @@
   .form-field {
     min-width: 100%;
   }
+}
+
+.template-bar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; padding: 16px 20px; border-radius: 12px; background: #eef2ff; color: #334155; }
+.template-bar button { margin: 4px; padding: 9px 14px; border: 1px solid #667eea; border-radius: 7px; color: #4f46e5; background: white; cursor: pointer; }
+.form-field select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: white; font: inherit; }
+.promotion-card details { border-top: 1px solid #e5e7eb; padding-top: 10px; }
+.promotion-card summary { cursor: pointer; color: #4f46e5; font-size: 13px; font-weight: 600; }
+.advanced-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.check-field { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.two-columns { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; }
+.simulation-result { display: flex; flex-direction: column; gap: 5px; padding: 14px; border-radius: 8px; background: #eefbf3; color: #166534; }
+.history-list { list-style: none; margin: 0; padding: 0; }
+.history-list li { display: flex; flex-direction: column; padding: 9px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+.history-list span, .empty-state { color: #64748b; font-size: 12px; margin-top: 3px; }
+
+@media (max-width: 900px) {
+  .two-columns { grid-template-columns: 1fr; }
+  .template-bar { align-items: flex-start; flex-direction: column; }
 }
