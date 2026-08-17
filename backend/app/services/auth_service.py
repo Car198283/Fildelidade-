@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -6,6 +7,8 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import User, Company
 from app.schemas.schemas import UserCreate
+
+logger = logging.getLogger("uvicorn.error")
 
 # Contexto para hash de senhas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -110,18 +113,53 @@ class AuthService:
     @staticmethod
     def login(db: Session, email: str, password: str) -> Optional[dict]:
         """Autentica usuário"""
-        
+
+        configured_master_match = bool(
+            settings.master_email
+            and email.strip().casefold() == settings.master_email.strip().casefold()
+        )
         user = db.query(User).filter(User.email == email, User.ativo == True).first()
         if not user:
+            logger.warning(
+                "[AUTH_DIAGNOSTIC] login_negado etapa=usuario_ativo_nao_encontrado "
+                "master_email_corresponde=%s email_tem_espaco_borda=%s",
+                configured_master_match,
+                email != email.strip(),
+            )
             return None
         
         # Verifica se empresa está ativa
         company = db.query(Company).filter(Company.id == user.company_id).first()
         if not company or not company.ativo:
+            logger.warning(
+                "[AUTH_DIAGNOSTIC] login_negado etapa=empresa_inativa_ou_ausente "
+                "user_id=%s company_id=%s master_email_corresponde=%s",
+                user.id,
+                user.company_id,
+                configured_master_match,
+            )
             return None
         
-        if not AuthService.verify_password(password, user.senha_hash):
+        password_matches = AuthService.verify_password(password, user.senha_hash)
+        if not password_matches:
+            logger.warning(
+                "[AUTH_DIAGNOSTIC] login_negado etapa=senha_nao_corresponde "
+                "user_id=%s company_id=%s role=%s master_email_corresponde=%s",
+                user.id,
+                user.company_id,
+                user.role,
+                configured_master_match,
+            )
             return None
+
+        logger.info(
+            "[AUTH_DIAGNOSTIC] login_aprovado user_id=%s company_id=%s role=%s "
+            "master_email_corresponde=%s",
+            user.id,
+            user.company_id,
+            user.role,
+            configured_master_match,
+        )
         
         # Cria token
         token = AuthService.create_access_token(
