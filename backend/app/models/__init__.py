@@ -1,6 +1,6 @@
 from .base import Base, TimestampMixin
 from .company import Company
-from .user import User
+from .user import User, UserAudit
 from .customer import Customer
 from .points_transaction import PointsTransaction
 from .product import Product
@@ -13,6 +13,7 @@ __all__ = [
     'TimestampMixin',
     'Company',
     'User',
+    'UserAudit',
     'Customer',
     'PointsTransaction',
     'Product',

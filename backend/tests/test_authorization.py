@@ -274,6 +274,50 @@ class AuthorizationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_ultimo_administrador_ativo_nao_pode_ser_desativado(self):
+        response = self.client.put(
+            f"/admin/users/{self.admin.id}",
+            json={"ativo": False, "motivo": "Teste de protecao"},
+            headers=self._headers(self.master),
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("administrador ativo", response.json()["detail"])
+
+    def test_criacao_usuario_registra_nome_auditoria_e_troca_senha(self):
+        response = self.client.post(
+            "/admin/users",
+            json={
+                "nome": "Maria Operadora",
+                "email": "maria@example.com",
+                "senha": "temporaria123",
+                "role": "operador_captura",
+                "exigir_troca_senha": True,
+            },
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["data"]["nome"], "Maria Operadora")
+        self.assertTrue(response.json()["data"]["exigir_troca_senha"])
+
+        history = self.client.get(
+            "/admin/users/audit/history", headers=self._headers(self.admin)
+        )
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(history.json()["data"][0]["acao"], "criacao")
+
+    def test_usuario_altera_senha_temporaria(self):
+        self.operator.exigir_troca_senha = True
+        self.db.commit()
+        response = self.client.post(
+            "/auth/change-password",
+            json={"senha_atual": "1234567890", "nova_senha": "nova-senha-segura"},
+            headers=self._headers(self.operator),
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.db.refresh(self.operator)
+        self.assertFalse(self.operator.exigir_troca_senha)
+        self.assertTrue(AuthService.verify_password("nova-senha-segura", self.operator.senha_hash))
+
     def test_promocao_avancada_cria_auditoria_e_simula(self):
         payload = {
             "tipo": "valor",

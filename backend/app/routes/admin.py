@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Company, Customer, PointsTransaction, Product, PromotionConfig, User, WhatsAppMessage
+from app.models import Company, Customer, PointsTransaction, Product, PromotionConfig, User, UserAudit, WhatsAppMessage
 from app.schemas.schemas import ManagedCompanyCreate, ManagedCompanyUpdate, ManagedUserCreate, ManagedUserUpdate
 from app.services.auth_service import AuthService
 from app.utils.dependencies import (
@@ -45,9 +46,12 @@ def serialize_user(user: User) -> dict:
     data = {
         "id": user.id,
         "email": user.email,
+        "nome": user.nome,
         "company_id": user.company_id,
         "role": user.role,
         "ativo": user.ativo,
+        "ultimo_acesso": user.ultimo_acesso,
+        "exigir_troca_senha": user.exigir_troca_senha,
         "created_at": user.created_at,
         "updated_at": user.updated_at,
     }
@@ -61,6 +65,37 @@ def resolve_company_id(current_user: User, requested_company_id: int | None) -> 
     if is_master(current_user):
         return requested_company_id or current_user.company_id
     return current_user.company_id
+
+
+def ensure_company_has_another_admin(db: Session, user: User) -> None:
+    if user.role != ROLE_ADMIN or not user.ativo:
+        return
+    another = (
+        db.query(User.id)
+        .filter(
+            User.company_id == user.company_id,
+            User.role == ROLE_ADMIN,
+            User.ativo == True,
+            User.id != user.id,
+        )
+        .first()
+    )
+    if not another:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A empresa precisa manter pelo menos um administrador ativo",
+        )
+
+
+def audit_user(db: Session, target: User, actor: User, action: str, reason: str, details=None) -> None:
+    db.add(UserAudit(
+        target_user_id=target.id,
+        actor_user_id=actor.id,
+        company_id=target.company_id,
+        acao=action,
+        motivo=reason,
+        detalhes=details,
+    ))
 
 
 @router.get("/companies")
@@ -253,17 +288,34 @@ def excluir_empresa(
 @router.get("/users")
 def listar_usuarios(
     company_id: int | None = None,
+    search: str | None = None,
+    role: str | None = None,
+    ativo: bool | None = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_or_master),
 ):
     target_company_id = resolve_company_id(current_user, company_id)
-    usuarios = (
-        db.query(User)
-        .filter(User.company_id == target_company_id)
-        .order_by(User.email.asc())
-        .all()
-    )
-    return {"success": True, "data": [serialize_user(user) for user in usuarios]}
+    query = db.query(User).filter(User.company_id == target_company_id)
+    if search:
+        term = f"%{search.strip()}%"
+        query = query.filter(or_(User.email.ilike(term), User.nome.ilike(term)))
+    if role:
+        query = query.filter(User.role == role)
+    if ativo is not None:
+        query = query.filter(User.ativo == ativo)
+    total = query.count()
+    usuarios = query.order_by(User.nome.asc(), User.email.asc()).offset((page - 1) * limit).limit(limit).all()
+    metrics_query = db.query(User).filter(User.company_id == target_company_id)
+    all_users = metrics_query.all()
+    metrics = {
+        "total": len(all_users),
+        "ativos": sum(1 for user in all_users if user.ativo),
+        "inativos": sum(1 for user in all_users if not user.ativo),
+        "administradores": sum(1 for user in all_users if user.role == ROLE_ADMIN and user.ativo),
+    }
+    return {"success": True, "data": [serialize_user(user) for user in usuarios], "total": total, "page": page, "limit": limit, "metrics": metrics}
 
 
 @router.post("/users")
@@ -285,13 +337,17 @@ def criar_usuario(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email ja cadastrado")
 
     user = User(
+        nome=body.nome,
         email=body.email,
         senha_hash=AuthService.hash_password(body.senha),
         company_id=target_company_id,
         role=body.role,
         ativo=True,
+        exigir_troca_senha=body.exigir_troca_senha,
     )
     db.add(user)
+    db.flush()
+    audit_user(db, user, current_user, "criacao", "Usuario criado", {"role": body.role})
     db.commit()
     db.refresh(user)
     return {"success": True, "data": serialize_user(user)}
@@ -317,15 +373,32 @@ def atualizar_usuario(
     if body.role is not None:
         if body.role == ROLE_MASTER:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Perfil Master nao pode ser atribuido aqui")
+        if user.role == ROLE_ADMIN and body.role != ROLE_ADMIN:
+            ensure_company_has_another_admin(db, user)
         user.role = body.role
 
     if body.ativo is not None:
         if user.id == current_user.id and body.ativo is False:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Voce nao pode desativar seu proprio usuario")
+        if body.ativo is False:
+            ensure_company_has_another_admin(db, user)
         user.ativo = body.ativo
+
+    if body.nome is not None:
+        user.nome = body.nome
 
     if body.senha:
         user.senha_hash = AuthService.hash_password(body.senha)
+        user.exigir_troca_senha = True
+
+    if body.exigir_troca_senha is not None:
+        user.exigir_troca_senha = body.exigir_troca_senha
+
+    audit_user(db, user, current_user, "atualizacao", body.motivo, {
+        "role": user.role,
+        "ativo": user.ativo,
+        "senha_redefinida": bool(body.senha),
+    })
 
     db.commit()
     db.refresh(user)
@@ -351,10 +424,37 @@ def excluir_usuario(
     if user.role == ROLE_MASTER:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Master nao pode ser excluido aqui")
 
+    ensure_company_has_another_admin(db, user)
     user.ativo = False
+    audit_user(db, user, current_user, "desativacao", "Desativacao administrativa")
     db.commit()
     db.refresh(user)
     return {"success": True, "message": "Usuario excluido com sucesso", "data": serialize_user(user)}
+
+
+@router.get("/users/audit/history")
+def listar_historico_usuarios(
+    company_id: int | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_master),
+):
+    target_company_id = resolve_company_id(current_user, company_id)
+    rows = (
+        db.query(UserAudit)
+        .filter(UserAudit.company_id == target_company_id)
+        .order_by(UserAudit.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    return {"success": True, "data": [{
+        "id": row.id,
+        "target_user_id": row.target_user_id,
+        "actor_user_id": row.actor_user_id,
+        "acao": row.acao,
+        "motivo": row.motivo,
+        "detalhes": row.detalhes,
+        "created_at": row.created_at,
+    } for row in rows]}
 
 
 @router.get("/me")
