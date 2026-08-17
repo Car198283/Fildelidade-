@@ -24,6 +24,8 @@ services:
         value: production
       - key: DEBUG
         value: "False"
+      - key: CORS_ORIGINS
+        value: https://fidelidade-web.onrender.com
       - key: SECRET_KEY
         generateValue: true
       - key: MASTER_EMAIL
