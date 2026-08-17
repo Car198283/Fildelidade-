@@ -24,6 +24,8 @@ class Company(Base, TimestampMixin):
     plano = Column(String(50), default="free")  # free, starter, pro, enterprise
     ativo = Column(Boolean, default=True)
     read_only = Column(Boolean, default=False, nullable=False)
+    whatsapp_phone_number_id = Column(String(80), nullable=True, unique=True)
+    whatsapp_business_account_id = Column(String(80), nullable=True)
 
     # Relacionamentos
     users = relationship("User", back_populates="company", cascade="all, delete-orphan")

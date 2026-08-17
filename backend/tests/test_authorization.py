@@ -1,6 +1,9 @@
 import os
 import tempfile
 import unittest
+import hashlib
+import hmac
+import json
 from pathlib import Path
 
 os.environ["APP_ENV"] = "test"
@@ -312,6 +315,65 @@ class AuthorizationTestCase(unittest.TestCase):
             self.assertEqual(other_company.json()["total"], 0)
         finally:
             settings.n8n_webhook_secret = previous_secret
+
+    def test_webhook_meta_valida_assinatura_e_atualiza_status(self):
+        previous_verify = settings.meta_webhook_verify_token
+        previous_secret = settings.meta_app_secret
+        settings.meta_webhook_verify_token = "verify-token-meta-test"
+        settings.meta_app_secret = "meta-app-secret-test-value"
+        self.company.whatsapp_phone_number_id = "123456789012345"
+        queued = WhatsAppMessage(
+            company_id=self.company.id,
+            customer_id=self.customer.id,
+            tipo="manual",
+            telefone="5511999999999",
+            mensagem="Teste",
+            status="enviado",
+            provider_message_id="wamid.meta-test",
+        )
+        self.db.add(queued)
+        self.db.commit()
+        try:
+            verify = self.client.get(
+                "/integracoes/meta/whatsapp/webhook",
+                params={
+                    "hub.mode": "subscribe",
+                    "hub.challenge": "challenge-123",
+                    "hub.verify_token": settings.meta_webhook_verify_token,
+                },
+            )
+            self.assertEqual(verify.status_code, 200, verify.text)
+            self.assertEqual(verify.text, "challenge-123")
+
+            payload = {
+                "entry": [{"changes": [{"value": {
+                    "metadata": {"phone_number_id": "123456789012345"},
+                    "statuses": [{"id": "wamid.meta-test", "status": "delivered"}],
+                }}]}]
+            }
+            raw = json.dumps(payload, separators=(",", ":")).encode()
+            signature = "sha256=" + hmac.new(
+                settings.meta_app_secret.encode(), raw, hashlib.sha256
+            ).hexdigest()
+            denied = self.client.post(
+                "/integracoes/meta/whatsapp/webhook",
+                content=raw,
+                headers={"Content-Type": "application/json", "X-Hub-Signature-256": "sha256=invalida"},
+            )
+            self.assertEqual(denied.status_code, 401)
+
+            accepted = self.client.post(
+                "/integracoes/meta/whatsapp/webhook",
+                content=raw,
+                headers={"Content-Type": "application/json", "X-Hub-Signature-256": signature},
+            )
+            self.assertEqual(accepted.status_code, 200, accepted.text)
+            self.assertEqual(accepted.json()["updated"], 1)
+            self.db.refresh(queued)
+            self.assertEqual(queued.status, "entregue")
+        finally:
+            settings.meta_webhook_verify_token = previous_verify
+            settings.meta_app_secret = previous_secret
 
     def test_admin_exclui_usuario_da_empresa(self):
         response = self.client.delete(
