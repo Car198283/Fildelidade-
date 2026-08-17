@@ -186,7 +186,8 @@ def obter_cliente(
         PointsTransaction.product_nome,
         PointsTransaction.created_at
     ).filter(
-        PointsTransaction.customer_id == cliente_id
+        PointsTransaction.customer_id == cliente_id,
+        PointsTransaction.company_id == company_id
     ).order_by(PointsTransaction.created_at.desc()).limit(20).all()
     
     transactions_formatted = [

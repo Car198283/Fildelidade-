@@ -1,52 +1,39 @@
-import os
-from typing import Optional
+from functools import lru_cache
+from typing import Literal
 
-from pydantic import field_validator
-from pydantic_settings import BaseSettings
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Configuracoes da aplicacao - suporta SQLite local e PostgreSQL online."""
+    """Configuração validada por ambiente; PostgreSQL é obrigatório fora de testes."""
 
-    # URL completa do banco, usada por plataformas como Render/Railway.
-    database_url: Optional[str] = None
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # Escolher qual banco usar: "sqlite" (padrao) ou "postgresql".
-    db_type: str = os.getenv("DB_TYPE", "sqlite")
-
-    # Database credentials (PostgreSQL).
-    db_host: str = os.getenv("DB_HOST", "localhost")
-    db_port: int = int(os.getenv("DB_PORT", "5432"))
-    db_name: str = os.getenv("DB_NAME", "bartcellos_loyalty")
-    db_user: str = os.getenv("DB_USER", "postgres")
-    db_password: str = os.getenv("DB_PASSWORD", "")
-
-    # SQLite path.
-    sqlite_path: str = os.getenv("SQLITE_PATH", "./bartcellos_loyalty.db")
-
-    # JWT.
-    secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    app_env: Literal["development", "staging", "production", "test"] = "development"
+    database_url: str = Field(..., min_length=1)
+    secret_key: str = Field(..., min_length=32)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-
-    # Master user bootstrap. Set MASTER_PASSWORD only in the hosting panel.
-    master_email: Optional[str] = os.getenv("MASTER_EMAIL")
-    master_password: Optional[str] = os.getenv("MASTER_PASSWORD")
-
-    # App.
-    debug: bool = True
+    master_email: str | None = None
+    master_password: str | None = None
+    debug: bool = False
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    cors_origins: str = "http://localhost:3000,http://localhost:5173"
 
-    class Config:
-        env_file = os.path.join(os.path.dirname(__file__), "../.env")
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    @field_validator("database_url")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+psycopg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
 
     @field_validator("debug", mode="before")
     @classmethod
     def normalize_debug(cls, value):
-        """Aceita valores de ambiente usados por plataformas de deploy."""
         if isinstance(value, str):
             normalized = value.strip().lower()
             if normalized in {"release", "production", "prod", "false", "0", "no", "off"}:
@@ -55,30 +42,22 @@ class Settings(BaseSettings):
                 return True
         return value
 
-    def get_database_url(self) -> str:
-        """Retorna URL do banco selecionado."""
-        if self.database_url:
-            if self.database_url.startswith("postgresql://"):
-                return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
-            if self.database_url.startswith("postgres://"):
-                return self.database_url.replace("postgres://", "postgresql+psycopg://", 1)
-            return self.database_url
+    @model_validator(mode="after")
+    def validate_environment(self):
+        if self.app_env != "test" and not self.database_url.startswith("postgresql+psycopg://"):
+            raise ValueError("DATABASE_URL deve apontar para PostgreSQL fora do ambiente de testes")
+        if self.app_env in {"staging", "production"} and self.debug:
+            raise ValueError("DEBUG não pode estar ativo em staging/production")
+        return self
 
-        if self.db_type.lower() == "postgresql":
-            return (
-                f"postgresql+psycopg://{self.db_user}:{self.db_password}"
-                f"@{self.db_host}:{self.db_port}/{self.db_name}"
-            )
-
-        return f"sqlite:///{self.sqlite_path}"
-
-    def get_database_info(self) -> str:
-        """Retorna informacoes sobre qual banco esta sendo usado."""
-        if self.database_url:
-            return "PostgreSQL (DATABASE_URL)"
-        if self.db_type.lower() == "postgresql":
-            return f"PostgreSQL ({self.db_host}:{self.db_port}/{self.db_name})"
-        return f"SQLite ({os.path.abspath(self.sqlite_path)})"
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

@@ -164,6 +164,7 @@ class PointsTransactionCreate(BaseModel):
     tipo: str  # entrada ou saida
     descricao: Optional[str] = None
     product_id: Optional[int] = None
+    motivo: str = Field(..., min_length=1, max_length=500)
 
 class PointsTransactionResponse(BaseModel):
     id: int

@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-os.environ["DB_TYPE"] = "sqlite"
-os.environ["SQLITE_PATH"] = str(Path(tempfile.gettempdir()) / "fidelidade_authorization_test.db")
+os.environ["APP_ENV"] = "test"
+os.environ["DATABASE_URL"] = "sqlite:///" + str(Path(tempfile.gettempdir()) / "fidelidade_authorization_test.db")
 os.environ["SECRET_KEY"] = "test-secret-key-for-authorization-suite"
 
 from fastapi.testclient import TestClient
@@ -171,6 +171,9 @@ class AuthorizationTestCase(unittest.TestCase):
             pontos=1,
             tipo="entrada",
             descricao="Teste",
+            user_id=self.admin.id,
+            origem="test",
+            motivo="Teste de exclusao",
         )
         self.db.add(transaction)
         self.db.commit()
@@ -190,6 +193,9 @@ class AuthorizationTestCase(unittest.TestCase):
             pontos=1,
             tipo="entrada",
             descricao="Teste",
+            user_id=self.admin.id,
+            origem="test",
+            motivo="Teste de exclusao forcada",
         )
         self.db.add(transaction)
         self.db.commit()

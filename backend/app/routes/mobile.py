@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Customer, User, PointsTransaction
@@ -6,6 +6,7 @@ from app.schemas.schemas import CustomerCreate, PointsTransactionCreate
 from app.utils.dependencies import get_current_user, get_writable_company_id, require_capture_operator, require_points_write_access
 from datetime import datetime
 from decimal import Decimal
+from app.services.points_service import PointsService
 
 router = APIRouter(prefix="/mobile", tags=["Mobile"])
 
@@ -105,7 +106,8 @@ def buscar_cliente_por_telefone(
     
     # Últimas 5 transações
     transacoes = db.query(PointsTransaction).filter(
-        PointsTransaction.customer_id == cliente.id
+        PointsTransaction.customer_id == cliente.id,
+        PointsTransaction.company_id == current_user.company_id
     ).order_by(PointsTransaction.created_at.desc()).limit(5).all()
     
     return {
@@ -138,7 +140,8 @@ def lancar_pontos_por_telefone(
     descricao: str = Query(None, max_length=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_points_write_access),
-    company_id: int = Depends(get_writable_company_id)
+    company_id: int = Depends(get_writable_company_id),
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=8, max_length=255)
 ):
     """
     Lança pontos para cliente via telefone
@@ -160,30 +163,13 @@ def lancar_pontos_por_telefone(
             detail=f"Cliente com telefone {telefone} não encontrado"
         )
     
-    pontos_decimal = Decimal(str(pontos))
-
-    # Valida pontos
-    if pontos_decimal <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Pontos devem ser maiores que zero"
-        )
-    
-    # Adiciona pontos
-    cliente.pontos += pontos_decimal
-    
-    # Cria transação
-    transacao = PointsTransaction(
-        customer_id=cliente.id,
-        company_id=company_id,
-        pontos=pontos_decimal,
-        tipo="entrada",
-        descricao=descricao or f"Lançamento manual via mobile"
+    transacao, cliente = PointsService.movimentar_pontos(
+        db, cliente.id, company_id, pontos, "entrada",
+        descricao or "Lancamento manual via mobile",
+        user_id=current_user.id, origem="mobile",
+        motivo=descricao or "Lancamento manual via mobile",
+        idempotency_key=idempotency_key,
     )
-    db.add(transacao)
-    db.commit()
-    db.refresh(cliente)
-    db.refresh(transacao)
     
     return {
         "success": True,
@@ -205,7 +191,8 @@ def resgatar_pontos_por_telefone(
     descricao: str = Query(None, max_length=500),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_points_write_access),
-    company_id: int = Depends(get_writable_company_id)
+    company_id: int = Depends(get_writable_company_id),
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=8, max_length=255)
 ):
     """
     Resgata (desconta) pontos de cliente via telefone
@@ -227,30 +214,16 @@ def resgatar_pontos_por_telefone(
             detail=f"Cliente com telefone {telefone} não encontrado"
         )
     
-    # Valida saldo
-    pontos_decimal = Decimal(str(pontos))
-
-    if cliente.pontos < pontos_decimal:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Saldo insuficiente. Cliente tem {cliente.pontos:.2f} pontos, tentou resgatar {pontos}"
+    try:
+        transacao, cliente = PointsService.movimentar_pontos(
+            db, cliente.id, company_id, pontos, "saida",
+            descricao or "Resgate de pontos via mobile",
+            user_id=current_user.id, origem="mobile",
+            motivo=descricao or "Resgate de pontos via mobile",
+            idempotency_key=idempotency_key,
         )
-    
-    # Desconta pontos
-    cliente.pontos -= pontos_decimal
-    
-    # Cria transação
-    transacao = PointsTransaction(
-        customer_id=cliente.id,
-        company_id=company_id,
-        pontos=pontos_decimal,
-        tipo="saida",
-        descricao=descricao or "Resgate de pontos via mobile"
-    )
-    db.add(transacao)
-    db.commit()
-    db.refresh(cliente)
-    db.refresh(transacao)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     
     return {
         "success": True,

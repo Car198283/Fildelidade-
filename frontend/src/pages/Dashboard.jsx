@@ -174,6 +174,7 @@ export default function Dashboard() {
           pontos: Number(cliente.pontos),
           tipo: "saida",
           descricao: "Resgate de premio",
+          motivo: "Premio resgatado pelo dashboard",
         });
 
         alert("Premio resgatado e pontos zerados com sucesso!");
