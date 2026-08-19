@@ -153,6 +153,9 @@ export const dashboardService = {
   clientesPremiadosCompleto: (limit = 50) =>
     api.get("/dashboard/clientes-premiados-completo", { params: { limit } }),
 
+  resgatesPremios: (limit = 50) =>
+    api.get("/dashboard/resgates-premios", { params: { limit } }),
+
   aniversariantes: (limit = 50, mes = null) =>
     api.get("/dashboard/aniversariantes", { params: { limit, mes } }),
 
