@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import or_
+from datetime import datetime
+
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -304,7 +306,7 @@ def listar_usuarios(
     current_user: User = Depends(require_admin_or_master),
 ):
     target_company_id = resolve_company_id(current_user, company_id)
-    query = db.query(User).filter(User.company_id == target_company_id)
+    query = db.query(User).filter(User.company_id == target_company_id, User.excluido_em.is_(None))
     if search:
         term = f"%{search.strip()}%"
         query = query.filter(or_(User.email.ilike(term), User.nome.ilike(term)))
@@ -314,7 +316,7 @@ def listar_usuarios(
         query = query.filter(User.ativo == ativo)
     total = query.count()
     usuarios = query.order_by(User.nome.asc(), User.email.asc()).offset((page - 1) * limit).limit(limit).all()
-    metrics_query = db.query(User).filter(User.company_id == target_company_id)
+    metrics_query = db.query(User).filter(User.company_id == target_company_id, User.excluido_em.is_(None))
     all_users = metrics_query.all()
     metrics = {
         "total": len(all_users),
@@ -339,14 +341,18 @@ def criar_usuario(
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa nao encontrada")
 
+    normalized_email = str(body.email).strip().lower()
     # tenant-scope: global - email e unico em todo o sistema.
-    existing = db.query(User).filter(User.email == body.email).first()
+    existing = db.query(User).filter(
+        func.lower(User.email) == normalized_email,
+        User.excluido_em.is_(None),
+    ).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email ja cadastrado")
 
     user = User(
         nome=body.nome,
-        email=body.email,
+        email=normalized_email,
         senha_hash=AuthService.hash_password(body.senha),
         company_id=target_company_id,
         role=body.role,
@@ -369,7 +375,7 @@ def atualizar_usuario(
     current_user: User = Depends(require_admin_or_master),
 ):
     # tenant-scope: global - master pode gerir empresas; autorizacao ocorre abaixo.
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_id, User.excluido_em.is_(None)).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario nao encontrado")
 
@@ -421,7 +427,7 @@ def excluir_usuario(
     current_user: User = Depends(require_admin_or_master),
 ):
     # tenant-scope: global - master pode gerir empresas; autorizacao ocorre abaixo.
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_id, User.excluido_em.is_(None)).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario nao encontrado")
 
@@ -435,11 +441,18 @@ def excluir_usuario(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Master nao pode ser excluido aqui")
 
     ensure_company_has_another_admin(db, user)
+    original_email = user.email
+    audit_user(db, user, current_user, "exclusao", "Exclusao administrativa", {
+        "email": original_email,
+        "nome": user.nome,
+        "role": user.role,
+    })
     user.ativo = False
-    audit_user(db, user, current_user, "desativacao", "Desativacao administrativa")
+    user.excluido_em = datetime.utcnow()
+    user.email = f"excluido-{user.id}-{original_email}"
     db.commit()
     db.refresh(user)
-    return {"success": True, "message": "Usuario excluido com sucesso", "data": serialize_user(user)}
+    return {"success": True, "message": "Usuario excluido com sucesso"}
 
 
 @router.get("/users/audit/history")

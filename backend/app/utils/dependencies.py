@@ -36,7 +36,10 @@ def get_current_user(
     if token_data is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalido")
 
-    user = db.query(User).filter(User.id == token_data["user_id"]).first()
+    user = db.query(User).filter(
+        User.id == token_data["user_id"],
+        User.excluido_em.is_(None),
+    ).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario nao encontrado")
 
