@@ -22,6 +22,7 @@ class User(Base, TimestampMixin):
     ativo = Column(Boolean, default=True)
     ultimo_acesso = Column(DateTime, nullable=True)
     exigir_troca_senha = Column(Boolean, default=False, nullable=False)
+    excluido_em = Column(DateTime, nullable=True, index=True)
 
     # Relacionamentos
     company = relationship("Company", back_populates="users")

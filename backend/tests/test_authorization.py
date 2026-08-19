@@ -384,6 +384,43 @@ class AuthorizationTestCase(unittest.TestCase):
 
         self.db.refresh(self.operator)
         self.assertFalse(self.operator.ativo)
+        self.assertIsNotNone(self.operator.excluido_em)
+
+        listed = self.client.get("/admin/users", headers=self._headers(self.admin))
+        listed_ids = {item["id"] for item in listed.json()["data"]}
+        self.assertNotIn(self.operator.id, listed_ids)
+
+    def test_login_ignora_maiusculas_e_espacos_no_email(self):
+        self.operator.email = "Carlos.Eduardo@Example.Com"
+        self.operator.exigir_troca_senha = True
+        self.db.commit()
+
+        response = self.client.post(
+            "/auth/login",
+            json={"email": "  carlos.eduardo@example.com  ", "senha": "1234567890"},
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(response.json()["data"]["exigir_troca_senha"])
+
+    def test_email_de_usuario_excluido_pode_ser_recadastrado(self):
+        original_email = self.operator.email
+        deleted = self.client.delete(
+            f"/admin/users/{self.operator.id}", headers=self._headers(self.admin)
+        )
+        self.assertEqual(deleted.status_code, 200, deleted.text)
+
+        created = self.client.post(
+            "/admin/users",
+            json={
+                "nome": "Novo Operador",
+                "email": original_email.upper(),
+                "senha": "temporaria123",
+                "role": "operador_captura",
+            },
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(created.status_code, 200, created.text)
+        self.assertEqual(created.json()["data"]["email"], original_email)
 
     def test_admin_nao_exclui_proprio_usuario(self):
         response = self.client.delete(

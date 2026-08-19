@@ -66,7 +66,7 @@ export default function UserManagement() {
         setMessage("Usuario atualizado e alteracao auditada.");
       } else {
         await adminService.createUser({ nome: form.nome, email: form.email, senha: form.senha, role: form.role, company_id: isMaster ? Number(selectedCompanyId) : null, exigir_troca_senha: true });
-        setMessage("Usuario criado. Ele devera trocar a senha temporaria no primeiro acesso.");
+        setMessage("Usuario criado. No primeiro login, use a senha temporaria e cadastre uma nova senha.");
       }
       cancelEdit(false); await refresh();
     } catch (error) { setMessage(error.response?.data?.detail || "Nao foi possivel salvar usuario."); }
@@ -95,7 +95,7 @@ export default function UserManagement() {
       await adminService.deleteUser(user.id);
       if (editingUserId === user.id) cancelEdit(false);
       await refresh();
-      setMessage("Usuario excluido e historico preservado.");
+      setMessage("Usuario excluido da lista; o historico de atividades foi preservado.");
     } catch (error) { setMessage(error.response?.data?.detail || "Nao foi possivel excluir o usuario."); }
   };
   const updateCompany = async (data) => {

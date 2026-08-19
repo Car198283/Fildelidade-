@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import User, Company
@@ -61,8 +62,9 @@ class AuthService:
         """Registra nova empresa + admin"""
         
         # Verifica se email já existe
+        normalized_email = email.strip().lower()
         # tenant-scope: global - email e unico em todo o sistema.
-        existing_user = db.query(User).filter(User.email == email).first()
+        existing_user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
         if existing_user:
             raise ValueError("Email já registrado")
         
@@ -74,7 +76,7 @@ class AuthService:
         # Cria usuario admin
         hashed_password = AuthService.hash_password(password)
         user = User(
-            email=email,
+            email=normalized_email,
             senha_hash=hashed_password,
             company_id=company.id,
             role="admin",
@@ -115,12 +117,17 @@ class AuthService:
     def login(db: Session, email: str, password: str) -> Optional[dict]:
         """Autentica usuário"""
 
+        normalized_email = email.strip().lower()
         configured_master_match = bool(
             settings.master_email
-            and email.strip().casefold() == settings.master_email.strip().casefold()
+            and normalized_email == settings.master_email.strip().lower()
         )
         # tenant-scope: global - login precisa localizar a empresa pelo email unico.
-        user = db.query(User).filter(User.email == email, User.ativo == True).first()
+        user = db.query(User).filter(
+            func.lower(User.email) == normalized_email,
+            User.ativo == True,
+            User.excluido_em.is_(None),
+        ).first()
         if not user:
             logger.warning(
                 "[AUTH_DIAGNOSTIC] login_negado etapa=usuario_ativo_nao_encontrado "
