@@ -62,7 +62,7 @@ export default function UserManagement() {
     event.preventDefault(); setLoading(true); setMessage("");
     try {
       if (editingUserId) {
-        await adminService.updateUser(editingUserId, { nome: form.nome, role: form.role, ativo: form.ativo, motivo: form.motivo });
+        await adminService.updateUser(editingUserId, { nome: form.nome, email: form.email, role: form.role, ativo: form.ativo, motivo: form.motivo });
         setMessage("Usuario atualizado e alteracao auditada.");
       } else {
         await adminService.createUser({ nome: form.nome, email: form.email, senha: form.senha, role: form.role, company_id: isMaster ? Number(selectedCompanyId) : null, exigir_troca_senha: true });
@@ -112,7 +112,7 @@ export default function UserManagement() {
 
     <section className="users-panel"><h2>{editingUserId ? "Editar usuario" : "Novo usuario"}</h2><form className="users-form" onSubmit={submit} autoComplete="off">
       <input placeholder="Nome completo" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} autoComplete="off" required minLength="2"/>
-      <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="off" disabled={Boolean(editingUserId)} required/>
+      <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="off" required/>
       {!editingUserId && <div className="password-field"><input type={showPassword ? "text" : "password"} placeholder="Senha temporaria" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} autoComplete="new-password" required minLength="8"/><button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>{showPassword ? "Ocultar" : "Ver"}</button></div>}
       <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}><option value="operador_captura">Operador de captura</option><option value="observador">Observador</option><option value="admin">Administrador</option></select>
       {editingUserId && <><select value={form.ativo ? "true" : "false"} onChange={(e) => setForm({ ...form, ativo: e.target.value === "true" })}><option value="true">Ativo</option><option value="false">Inativo</option></select><input placeholder="Motivo da alteracao" value={form.motivo} onChange={(e) => setForm({ ...form, motivo: e.target.value })} required minLength="3"/></>}

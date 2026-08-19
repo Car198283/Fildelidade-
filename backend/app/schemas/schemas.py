@@ -77,6 +77,7 @@ class ManagedUserCreate(BaseModel):
 
 class ManagedUserUpdate(BaseModel):
     nome: Optional[str] = Field(None, min_length=2, max_length=160)
+    email: Optional[EmailStr] = None
     role: Optional[str] = Field(None, pattern="^(admin|operador_captura|observador)$")
     ativo: Optional[bool] = None
     senha: Optional[str] = Field(None, min_length=6, max_length=72)
