@@ -49,8 +49,10 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .getRegistrations()
-      .then((registrations) => {
-        registrations.forEach((registration) => registration.unregister());
+      .then(async (registrations) => {
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
       })
       .catch((error) => {
         console.log("SW cleanup failed:", error);
