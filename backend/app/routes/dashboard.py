@@ -198,6 +198,17 @@ def obter_clientes_premiados_completo(
         "data": clientes
     }
 
+@router.get("/resgates-premios")
+def obter_resgates_premios(
+    limit: int = Query(50, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    company_id: int = Depends(get_effective_company_id),
+):
+    resgates = DashboardService.get_resgates_premios(db, company_id, limit)
+    return {"success": True, "total": len(resgates), "data": resgates}
+
+
 @router.get("/relatorio-pdf-aniversariantes")
 def download_relatorio_aniversariantes(
     mes: int = Query(None, ge=1, le=12),

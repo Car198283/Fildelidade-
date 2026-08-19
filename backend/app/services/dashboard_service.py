@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import cast, extract, func, Integer
+from sqlalchemy import cast, extract, func, Integer, or_
 from sqlalchemy.orm import Session
 
 from app.models import Customer, PointsTransaction, PromotionConfig
@@ -461,6 +461,39 @@ class DashboardService:
                 break
 
         return quase_premiados
+
+    @staticmethod
+    def get_resgates_premios(db: Session, company_id: int, limit: int = 50) -> list:
+        """Retorna o historico de premios resgatados pela empresa."""
+        rows = (
+            db.query(PointsTransaction, Customer)
+            .join(Customer, Customer.id == PointsTransaction.customer_id)
+            .filter(
+                PointsTransaction.company_id == company_id,
+                PointsTransaction.tipo == "saida",
+                or_(
+                    PointsTransaction.descricao.ilike("%resgate%premio%"),
+                    PointsTransaction.motivo.ilike("%premio%resgat%"),
+                ),
+            )
+            .order_by(PointsTransaction.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        result = []
+        for transaction, customer in rows:
+            description = (transaction.descricao or "").strip()
+            prize = description.split(":", 1)[1].strip() if ":" in description else ""
+            result.append({
+                "id": transaction.id,
+                "customer_id": customer.id,
+                "cliente": customer.nome,
+                "telefone": customer.telefone,
+                "premio": prize or transaction.product_nome or "Premio nao informado",
+                "pontos_resgatados": DashboardService._number(transaction.pontos),
+                "data_resgate": transaction.created_at,
+            })
+        return result
 
     @staticmethod
     def get_clientes_premiados_completo(db: Session, company_id: int, limit: int = 50) -> list:

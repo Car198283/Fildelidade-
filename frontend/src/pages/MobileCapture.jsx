@@ -52,6 +52,7 @@ export default function MobileCapture() {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [premiados, setPremiados] = useState([]);
+  const [quasePremiados, setQuasePremiados] = useState([]);
   const [aniversariantes, setAniversariantes] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -101,8 +102,12 @@ export default function MobileCapture() {
   const carregarPremiados = async () => {
     setListLoading(true);
     try {
-      const response = await dashboardService.clientesPremiadosCompleto(100);
-      setPremiados(Array.isArray(response.data?.data) ? response.data.data : []);
+      const [premiadosResponse, quaseResponse] = await Promise.all([
+        dashboardService.clientesPremiadosCompleto(100),
+        dashboardService.clientesQuasePremiados(100),
+      ]);
+      setPremiados(Array.isArray(premiadosResponse.data?.data) ? premiadosResponse.data.data : []);
+      setQuasePremiados(Array.isArray(quaseResponse.data?.data) ? quaseResponse.data.data : []);
     } catch (err) {
       console.error("Erro ao carregar premiados", err);
       showMessage("Nao foi possivel carregar os clientes premiados.");
@@ -222,8 +227,15 @@ export default function MobileCapture() {
       return;
     }
 
+    const premio = window.prompt(`Qual premio ${cliente.nome} esta recebendo?`);
+    if (premio === null) return;
+    if (!premio.trim()) {
+      showMessage("Informe o premio entregue ao cliente.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      `Resgatar premio de ${cliente.nome} e zerar ${formatPoints(pontos)} ponto(s)?`,
+      `Entregar "${premio.trim()}" para ${cliente.nome} e zerar ${formatPoints(pontos)} ponto(s)?`,
     );
     if (!confirmed) return;
 
@@ -232,7 +244,7 @@ export default function MobileCapture() {
       await pointsService.moviment(cliente.id, {
         pontos,
         tipo: "saida",
-        descricao: "Resgate de premio - pontuacao zerada",
+        descricao: `Resgate de premio: ${premio.trim()}`,
         motivo: "Premio resgatado na captura mobile",
       });
 
@@ -496,6 +508,27 @@ export default function MobileCapture() {
                   </button>
                 </article>
               ))}
+            </div>
+          )}
+
+          {!listLoading && (
+            <div className="near-winners-section">
+              <h2>Quase Premiados</h2>
+              {quasePremiados.length === 0 ? (
+                <p className="empty">Nenhum cliente proximo do premio</p>
+              ) : (
+                <div className="mobile-card-list">
+                  {quasePremiados.map((cliente) => (
+                    <article className="mobile-info-card near-winner-card" key={cliente.id}>
+                      <div><h3>{cliente.nome}</h3><p>{cliente.telefone || "Sem telefone"}</p></div>
+                      <div className="near-winner-progress">
+                        <strong>{cliente.percentual}%</strong>
+                        <span>Faltam {formatPoints(cliente.falta)} pts</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

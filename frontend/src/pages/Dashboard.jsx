@@ -17,6 +17,7 @@ export default function Dashboard() {
     [],
   );
   const [clientesQuasePremiados, setClientesQuasePremiados] = useState([]);
+  const [resgatesPremios, setResgatesPremios] = useState([]);
   const [currentCompany, setCurrentCompany] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState(
@@ -65,13 +66,14 @@ export default function Dashboard() {
         companyRequest = Promise.resolve(companiesRes);
       }
 
-      const [statsRes, analyticsRes, topRes, productsRes, premiadosRes, quaseRes, companyRes] = await Promise.allSettled([
+      const [statsRes, analyticsRes, topRes, productsRes, premiadosRes, quaseRes, resgatesRes, companyRes] = await Promise.allSettled([
         dashboardService.stats(),
         dashboardService.analytics(periodDays),
         dashboardService.topCustomers(10),
         dashboardService.topProducts(10),
         dashboardService.clientesPremiadosCompleto(),
         dashboardService.clientesQuasePremiados(),
+        dashboardService.resgatesPremios(50),
         companyRequest,
       ]);
 
@@ -84,6 +86,9 @@ export default function Dashboard() {
       }
       if (quaseRes.status === "fulfilled") {
         setClientesQuasePremiados(quaseRes.value.data.data);
+      }
+      if (resgatesRes.status === "fulfilled") {
+        setResgatesPremios(resgatesRes.value.data.data);
       }
 
       if (user.role === "master") {
@@ -172,16 +177,23 @@ export default function Dashboard() {
       return;
     }
 
+    const premio = window.prompt(`Qual premio ${cliente.nome} esta recebendo?`);
+    if (premio === null) return;
+    if (!premio.trim()) {
+      alert("Informe o premio entregue ao cliente.");
+      return;
+    }
+
     if (
       confirm(
-        `Resgatar premio de ${cliente.nome} e zerar ${cliente.pontos} ponto(s)?`,
+        `Entregar "${premio.trim()}" para ${cliente.nome} e zerar ${cliente.pontos} ponto(s)?`,
       )
     ) {
       try {
         await pointsService.moviment(cliente.id, {
           pontos: Number(cliente.pontos),
           tipo: "saida",
-          descricao: "Resgate de premio",
+          descricao: `Resgate de premio: ${premio.trim()}`,
           motivo: "Premio resgatado pelo dashboard",
         });
 
@@ -361,6 +373,27 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <div className="premios-section">
+        <h2>Historico de Premios Resgatados</h2>
+        {resgatesPremios.length === 0 ? (
+          <p className="vazio">Nenhum premio resgatado ainda</p>
+        ) : (
+          <div className="resgates-table-wrap">
+            <table className="resgates-table">
+              <thead><tr><th>Cliente</th><th>Premio</th><th>Pontos</th><th>Data do resgate</th></tr></thead>
+              <tbody>{resgatesPremios.map((resgate) => (
+                <tr key={resgate.id}>
+                  <td><strong>{resgate.cliente}</strong><small>{resgate.telefone || "Sem telefone"}</small></td>
+                  <td>{resgate.premio}</td>
+                  <td>{Number(resgate.pontos_resgatados).toLocaleString("pt-BR")}</td>
+                  <td>{new Date(resgate.data_resgate).toLocaleString("pt-BR")}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* SEÇÃO: CLIENTES PREMIADOS (100%) */}
       <div className="premios-section">

@@ -246,10 +246,18 @@ table tr:hover {
 }
 
 .clientes-grid {
+  margin-top: 4px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
 }
+
+.resgates-table-wrap { overflow-x: auto; }
+.resgates-table { width: 100%; border-collapse: collapse; min-width: 620px; }
+.resgates-table th, .resgates-table td { padding: 12px 14px; border-bottom: 1px solid #e5e7eb; text-align: left; font-size: 13px; }
+.resgates-table th { color: #475569; background: #f8fafc; }
+.resgates-table td { color: #334155; }
+.resgates-table td small { display: block; margin-top: 3px; color: #64748b; }
 
 .cliente-card {
   background: #f9f9f9;

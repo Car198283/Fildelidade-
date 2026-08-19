@@ -71,6 +71,22 @@ class PointsIntegrityTestCase(unittest.TestCase):
         self.assertEqual(analytics["atual"]["ticket_medio"], 50.0)
         self.assertTrue(analytics["serie_diaria"])
 
+    def test_dashboard_lista_premio_resgatado_com_data(self):
+        PointsService.movimentar_pontos(
+            self.db, self.customer_id, self.company_id, 10, "entrada", "Compra",
+            user_id=self.user_id, origem="test", motivo="Compra", idempotency_key="resgate-entrada",
+        )
+        PointsService.movimentar_pontos(
+            self.db, self.customer_id, self.company_id, 10, "saida", "Resgate de premio: Sorvete grande",
+            user_id=self.user_id, origem="test", motivo="Premio resgatado", idempotency_key="resgate-saida",
+        )
+
+        resgates = DashboardService.get_resgates_premios(self.db, self.company_id)
+        self.assertEqual(len(resgates), 1)
+        self.assertEqual(resgates[0]["cliente"], "Cliente")
+        self.assertEqual(resgates[0]["premio"], "Sorvete grande")
+        self.assertIsNotNone(resgates[0]["data_resgate"])
+
 
 if __name__ == "__main__":
     unittest.main()
