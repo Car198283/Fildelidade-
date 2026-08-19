@@ -1,25 +1,17 @@
-// Service Worker kept only to clean old PWA caches from previous versions.
-const CACHE_NAME = "fidelidade-total-v2";
-const API_CACHE = "fidelidade-total-api-v2";
+// Service Worker kept only to remove caches created by older PWA versions.
+// Do not preserve named caches here: an old cached index can keep the entire
+// application pinned to an obsolete JavaScript bundle after a deploy.
 
 // Install event
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME));
+  event.waitUntil(caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name)))));
   self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE) {
-            return caches.delete(cacheName);
-          }
-        }),
-      );
-    }),
+    caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name)))),
   );
   self.clients.claim();
 });
