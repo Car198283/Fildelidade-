@@ -429,6 +429,30 @@ class AuthorizationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_admin_corrige_email_do_usuario(self):
+        response = self.client.put(
+            f"/admin/users/{self.operator.id}",
+            json={"email": "  Carlos.Correto@Example.Com  ", "motivo": "Correcao cadastral"},
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["data"]["email"], "carlos.correto@example.com")
+
+        login = self.client.post(
+            "/auth/login",
+            json={"email": "CARLOS.CORRETO@EXAMPLE.COM", "senha": "1234567890"},
+        )
+        self.assertEqual(login.status_code, 200, login.text)
+
+    def test_admin_nao_pode_repetir_email_de_outro_usuario(self):
+        response = self.client.put(
+            f"/admin/users/{self.operator.id}",
+            json={"email": self.observer.email.upper(), "motivo": "Correcao cadastral"},
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(response.status_code, 400, response.text)
+        self.assertIn("Email ja cadastrado", response.json()["detail"])
+
     def test_ultimo_administrador_ativo_nao_pode_ser_desativado(self):
         response = self.client.put(
             f"/admin/users/{self.admin.id}",

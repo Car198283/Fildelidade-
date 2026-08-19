@@ -402,6 +402,19 @@ def atualizar_usuario(
     if body.nome is not None:
         user.nome = body.nome
 
+    previous_email = user.email
+    if body.email is not None:
+        normalized_email = str(body.email).strip().lower()
+        # tenant-scope: global - email e unico em todo o sistema.
+        existing_email = db.query(User.id).filter(
+            func.lower(User.email) == normalized_email,
+            User.excluido_em.is_(None),
+            User.id != user.id,
+        ).first()
+        if existing_email:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email ja cadastrado")
+        user.email = normalized_email
+
     if body.senha:
         user.senha_hash = AuthService.hash_password(body.senha)
         user.exigir_troca_senha = True
@@ -412,6 +425,8 @@ def atualizar_usuario(
     audit_user(db, user, current_user, "atualizacao", body.motivo, {
         "role": user.role,
         "ativo": user.ativo,
+        "email_anterior": previous_email if previous_email != user.email else None,
+        "email_atual": user.email,
         "senha_redefinida": bool(body.senha),
     })
 
