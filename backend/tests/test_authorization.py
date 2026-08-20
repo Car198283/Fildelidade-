@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from app.database import SessionLocal, engine
 from app.main import app
 from app.config import settings
-from app.models import Base, Company, Customer, PointsTransaction, PromotionConfig, User, WhatsAppMessage
+from app.models import Base, Company, Customer, PointsTransaction, PromotionConfig, ReportExportAudit, User, WhatsAppMessage
 from app.services.auth_service import AuthService
 
 
@@ -96,6 +96,38 @@ class AuthorizationTestCase(unittest.TestCase):
     def test_operador_captura_nao_acessa_admin(self):
         response = self.client.get("/admin/users", headers=self._headers(self.operator))
         self.assertEqual(response.status_code, 403)
+
+    def test_apenas_master_acessa_central_de_relatorios(self):
+        denied = self.client.get(
+            "/admin/reports/preview",
+            params={"report_type": "clientes"},
+            headers=self._headers(self.admin),
+        )
+        self.assertEqual(denied.status_code, 403)
+
+        allowed = self.client.get(
+            "/admin/reports/preview",
+            params={"report_type": "clientes", "company_id": self.company.id},
+            headers=self._headers(self.master),
+        )
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(allowed.json()["data"]["total"], 1)
+        self.assertEqual(allowed.json()["data"]["rows"][0]["Cliente"], "Cliente A")
+
+    def test_master_exporta_relatorio_excel_e_pdf(self):
+        for export_format, content_type in (
+            ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            ("pdf", "application/pdf"),
+        ):
+            response = self.client.get(
+                "/admin/reports/export",
+                params={"report_type": "clientes", "format": export_format, "company_id": self.company.id},
+                headers=self._headers(self.master),
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(content_type, response.headers["content-type"])
+            self.assertGreater(len(response.content), 100)
+        self.assertEqual(self.db.query(ReportExportAudit).count(), 2)
 
     def test_admin_nao_acessa_cliente_de_outra_empresa(self):
         response = self.client.get(

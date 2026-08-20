@@ -43,6 +43,10 @@ export const adminService = {
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
 
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+
+  reportPreview: (params) => api.get("/admin/reports/preview", { params }),
+
+  exportReport: (params) => api.get("/admin/reports/export", { params, responseType: "blob" }),
 };
 
 // ========== CUSTOMERS ==========

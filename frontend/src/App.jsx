@@ -20,6 +20,7 @@ import UserManagement from "./pages/UserManagement";
 import CompanyManagement from "./pages/CompanyManagement";
 import ChangePassword from "./pages/ChangePassword";
 import WhatsAppIntegration from "./pages/WhatsAppIntegration";
+import MasterReports from "./pages/MasterReports";
 
 import "./App.css";
 
@@ -101,6 +102,7 @@ function ProtectedLayout({ children }) {
             {canManage && <a href="/usuarios">Usuarios</a>}
             {canManage && <a href="/integracoes">WhatsApp</a>}
             {isMaster && <a href="/empresas">Empresas</a>}
+            {isMaster && <a href="/relatorios-master">Relatorios</a>}
             <a href="/captura" className="capture-link">
               Captura
             </a>
@@ -222,6 +224,15 @@ export default function App() {
               <ProtectedLayout>
                 <CompanyManagement />
               </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/relatorios-master"
+          element={
+            <PrivateRoute roles={["master"]}>
+              <ProtectedLayout><MasterReports /></ProtectedLayout>
             </PrivateRoute>
           }
         />

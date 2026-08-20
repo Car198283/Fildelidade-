@@ -7,6 +7,7 @@ from .product import Product
 from .category import Category
 from .promotion import PromotionAudit, PromotionConfig, TipoPromocao
 from .whatsapp_message import WhatsAppMessage
+from .report_export_audit import ReportExportAudit
 
 __all__ = [
     'Base',
@@ -22,4 +23,5 @@ __all__ = [
     'PromotionAudit',
     'TipoPromocao',
     'WhatsAppMessage',
+    'ReportExportAudit',
 ]
