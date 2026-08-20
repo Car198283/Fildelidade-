@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import SessionLocal
 from app.models import Company, User
-from app.routes import admin, auth, customers, points, products, dashboard, promotions, reports, mobile, integrations, meta_webhook
+from app.routes import admin, auth, customers, points, products, dashboard, promotions, reports, mobile, integrations, meta_webhook, master_reports
 from app.config import settings
 from app.services.auth_service import AuthService
 
@@ -108,6 +108,7 @@ app.include_router(mobile.router)
 app.include_router(integrations.router)
 app.include_router(meta_webhook.router)
 app.include_router(admin.router)
+app.include_router(master_reports.router)
 
 @app.get("/")
 def root():
