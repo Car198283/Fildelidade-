@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { customerService } from "../services";
 import {
   birthdayInputToApi,
@@ -212,6 +213,13 @@ export default function Customers() {
                   <td>{customer.email || "-"}</td>
                   <td className="points">{customer.pontos}</td>
                   <td className="actions">
+                    <Link
+                      className="btn-profile"
+                      to={`/customer/${customer.id}`}
+                      title="Ver perfil e histórico de compras"
+                    >
+                      👤 Ver perfil
+                    </Link>
                     <button
                       className="btn-edit"
                       onClick={() => abrirEdicao(customer.id)}
