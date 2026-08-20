@@ -5,6 +5,7 @@ import {
   formatBirthdayInput,
   normalizeBirthdayForInput,
 } from "../utils/dateInput";
+import { formatApiDateTime } from "../utils/dateTime";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -387,7 +388,7 @@ export default function Dashboard() {
                   <td><strong>{resgate.cliente}</strong><small>{resgate.telefone || "Sem telefone"}</small></td>
                   <td>{resgate.premio}</td>
                   <td>{Number(resgate.pontos_resgatados).toLocaleString("pt-BR")}</td>
-                  <td>{new Date(resgate.data_resgate).toLocaleString("pt-BR")}</td>
+                  <td>{formatApiDateTime(resgate.data_resgate)}</td>
                 </tr>
               ))}</tbody>
             </table>
