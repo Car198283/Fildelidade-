@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { customerService, dashboardService, pointsService, productService } from "../services";
+import { formatApiDate, formatApiDateTime } from "../utils/dateTime";
 import "./CustomerDetails.css";
 
 export default function CustomerDetails() {
@@ -73,7 +74,6 @@ export default function CustomerDetails() {
   const purchaseProfile = customer.purchase_profile || {};
   const purchases = transactions.filter((tx) => tx.tipo === "entrada" && tx.valor_compra != null);
   const formatCurrency = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const formatDateTime = (value) => value ? new Date(value).toLocaleString("pt-BR") : "-";
 
   return (
     <div className="customer-details">
@@ -107,7 +107,7 @@ export default function CustomerDetails() {
         </p>
         <p>
           <strong>Cadastro:</strong>{" "}
-          {new Date(customer.created_at).toLocaleDateString("pt-BR")}
+          {formatApiDate(customer.created_at)}
         </p>
       </div>
 
@@ -181,7 +181,7 @@ export default function CustomerDetails() {
         <article><span>Total gasto</span><strong>{formatCurrency(purchaseProfile.total_gasto)}</strong></article>
         <article><span>Compras registradas</span><strong>{purchaseProfile.total_compras || 0}</strong></article>
         <article><span>Ticket médio</span><strong>{formatCurrency(purchaseProfile.ticket_medio)}</strong></article>
-        <article><span>Última compra</span><strong>{formatDateTime(purchaseProfile.ultima_compra)}</strong></article>
+        <article><span>Última compra</span><strong>{formatApiDateTime(purchaseProfile.ultima_compra)}</strong></article>
         <article><span>Produto favorito</span><strong>{purchaseProfile.produto_favorito || "-"}</strong></article>
       </div>
 
@@ -191,7 +191,7 @@ export default function CustomerDetails() {
           <div className="table-scroll"><table className="transactions-table">
             <thead><tr><th>Data e hora</th><th>Produto</th><th>Valor</th><th>Pontos</th><th>Registrado por</th><th>Descrição</th></tr></thead>
             <tbody>{purchases.map((tx) => <tr key={tx.id}>
-              <td>{formatDateTime(tx.created_at)}</td>
+              <td>{formatApiDateTime(tx.created_at)}</td>
               <td>{tx.product_nome || "-"}</td>
               <td className="purchase-value">{formatCurrency(tx.valor_compra)}</td>
               <td className="points entrada">+{tx.pontos}</td>
@@ -219,7 +219,7 @@ export default function CustomerDetails() {
             <tbody>
               {consumedProducts.map((item) => (
                 <tr key={item.id}>
-                  <td>{new Date(item.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td>{formatApiDate(item.created_at)}</td>
                   <td>{item.produto}</td>
                   <td className="points entrada">{item.pontos}</td>
                   <td>{item.descricao || "-"}</td>
@@ -247,7 +247,7 @@ export default function CustomerDetails() {
             <tbody>
               {transactions.map((tx) => (
                 <tr key={tx.id} className={`type-${tx.tipo}`}>
-                  <td>{new Date(tx.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td>{formatApiDate(tx.created_at)}</td>
                   <td className="tipo">
                     {tx.tipo === "entrada" ? "➕ Entrada" : "➖ Saída"}
                   </td>

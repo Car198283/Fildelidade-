@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { promotionService } from "../services";
+import { formatApiDateTime } from "../utils/dateTime";
 import "./PromotionConfig.css";
 
 const common = {
@@ -130,7 +131,7 @@ export default function PromotionConfig() {
         {statusMessage && <p className="status-message">{statusMessage}</p>}
       </section>
       <section className="section two-columns"><div><h2>Simulador antes de publicar</h2><div className="input-row"><Field label="Compras do cliente" type="number" value={simulation.compras} onChange={(v) => setSimulation({ ...simulation, compras: v })}/><Field label="Valor da compra (R$)" type="number" value={simulation.valor_compra} onChange={(v) => setSimulation({ ...simulation, valor_compra: v })}/><button className="btn btn-secondary" onClick={simulate}>Simular regras salvas</button></div>{simulationResult && <div className="simulation-result"><strong>Resultado: {simulationResult.pontos_totais} ponto(s)</strong>{simulationResult.regras.map((r) => <span key={r.id}>{r.nome}: {r.pontos}</span>)}</div>}</div>
-        <div><h2>Historico recente</h2>{history.length ? <ul className="history-list">{history.slice(0, 6).map((item) => <li key={item.id}><strong>{item.acao}</strong> da promocao #{item.promotion_id}<span>{item.motivo} · {new Date(item.created_at).toLocaleString("pt-BR")}</span></li>)}</ul> : <p className="empty-state">O historico aparecera depois do primeiro salvamento.</p>}</div></section>
+        <div><h2>Historico recente</h2>{history.length ? <ul className="history-list">{history.slice(0, 6).map((item) => <li key={item.id}><strong>{item.acao}</strong> da promocao #{item.promotion_id}<span>{item.motivo} · {formatApiDateTime(item.created_at)}</span></li>)}</ul> : <p className="empty-state">O historico aparecera depois do primeiro salvamento.</p>}</div></section>
       <section className="section info"><h2>Como as regras funcionam</h2><ul><li><strong>Quantidade:</strong> premia a frequencia de compras do cliente.</li><li><strong>Valor:</strong> transforma faixas de gasto em pontos.</li><li><strong>Personalizada:</strong> registra condicoes especiais de campanha.</li><li><strong>Seguranca:</strong> todas as mudancas guardam usuario, empresa, data e motivo.</li></ul></section>
     </div>
   </div>;

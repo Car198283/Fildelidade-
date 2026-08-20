@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { adminService } from "../services";
+import { formatApiDateTime } from "../utils/dateTime";
 import "./UserManagement.css";
 
 const emptyForm = { nome: "", email: "", senha: "", role: "operador_captura", ativo: true, motivo: "Cadastro de usuario" };
@@ -11,7 +12,7 @@ const roleDescriptions = {
 };
 
 function storedUser() { try { return JSON.parse(sessionStorage.getItem("user") || "{}"); } catch { return {}; } }
-function formatDate(value) { return value ? new Date(value).toLocaleString("pt-BR") : "Nunca acessou"; }
+function formatDate(value) { return value ? formatApiDateTime(value) : "Nunca acessou"; }
 
 export default function UserManagement() {
   const currentUser = storedUser();
