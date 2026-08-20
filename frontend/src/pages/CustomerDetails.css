@@ -40,6 +40,54 @@
   color: #667eea;
 }
 
+.customer-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0;
+  padding: 6px;
+  background: #eef2ff;
+  border-radius: 10px;
+}
+
+.customer-tabs button {
+  flex: 1;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4b5563;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-tabs button.active {
+  background: white;
+  color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.14);
+}
+
+.purchase-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.purchase-summary article {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.purchase-summary span { color: #6b7280; font-size: 13px; }
+.purchase-summary strong { color: #111827; font-size: 18px; }
+.purchase-value { color: #047857; font-weight: 700; white-space: nowrap; }
+.table-scroll { overflow-x: auto; }
+
 .info-card,
 .points-card,
 .history-card {
@@ -137,4 +185,13 @@
   color: #e74c3c;
   text-align: center;
   padding: 40px;
+}
+
+@media (max-width: 640px) {
+  .customer-details { padding: 12px; }
+  .header { align-items: flex-start; gap: 12px; }
+  .header h1 { font-size: 22px; }
+  .points-display { flex-direction: column; align-items: flex-end; gap: 2px; }
+  .customer-tabs { flex-direction: column; }
+  .transactions-table { min-width: 760px; }
 }

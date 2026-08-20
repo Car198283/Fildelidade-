@@ -180,24 +180,54 @@ def obter_cliente(
     transactions = db.query(
         PointsTransaction.id,
         PointsTransaction.pontos,
+        PointsTransaction.valor_compra,
         PointsTransaction.tipo,
         PointsTransaction.descricao,
+        PointsTransaction.motivo,
         PointsTransaction.product_id,
         PointsTransaction.product_nome,
+        User.nome.label("usuario_nome"),
+        User.email.label("usuario_email"),
         PointsTransaction.created_at
-    ).filter(
+    ).outerjoin(User, User.id == PointsTransaction.user_id).filter(
         PointsTransaction.customer_id == cliente_id,
         PointsTransaction.company_id == company_id
-    ).order_by(PointsTransaction.created_at.desc()).limit(20).all()
+    ).order_by(PointsTransaction.created_at.desc()).limit(100).all()
+
+    purchase_filter = (
+        PointsTransaction.customer_id == cliente_id,
+        PointsTransaction.company_id == company_id,
+        PointsTransaction.tipo == "entrada",
+        PointsTransaction.valor_compra.isnot(None),
+    )
+    purchase_summary = db.query(
+        func.count(PointsTransaction.id),
+        func.coalesce(func.sum(PointsTransaction.valor_compra), 0),
+        func.coalesce(func.avg(PointsTransaction.valor_compra), 0),
+        func.max(PointsTransaction.created_at),
+    ).filter(*purchase_filter).one()
+    favorite_product = db.query(
+        PointsTransaction.product_nome,
+        func.count(PointsTransaction.id).label("total"),
+    ).filter(
+        *purchase_filter,
+        PointsTransaction.product_nome.isnot(None),
+    ).group_by(PointsTransaction.product_nome).order_by(
+        func.count(PointsTransaction.id).desc(),
+        PointsTransaction.product_nome.asc(),
+    ).first()
     
     transactions_formatted = [
         {
             "id": t.id,
             "pontos": t.pontos,
+            "valor_compra": t.valor_compra,
             "tipo": t.tipo,
             "descricao": t.descricao,
+            "motivo": t.motivo,
             "product_id": t.product_id,
             "product_nome": t.product_nome,
+            "usuario_nome": t.usuario_nome or t.usuario_email,
             "created_at": t.created_at
         }
         for t in transactions
@@ -214,7 +244,14 @@ def obter_cliente(
             "pontos": cliente.pontos,
             "ativo": cliente.ativo,  # NOVO
             "created_at": cliente.created_at,
-            "transactions": transactions_formatted
+            "transactions": transactions_formatted,
+            "purchase_profile": {
+                "total_compras": purchase_summary[0],
+                "total_gasto": purchase_summary[1],
+                "ticket_medio": purchase_summary[2],
+                "ultima_compra": purchase_summary[3],
+                "produto_favorito": favorite_product[0] if favorite_product else None,
+            }
         }
     }
 

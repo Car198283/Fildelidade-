@@ -9,6 +9,7 @@ export default function CustomerDetails() {
   const [transactions, setTransactions] = useState([]);
   const [products, setProducts] = useState([]);
   const [consumedProducts, setConsumedProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState("perfil");
   const [loading, setLoading] = useState(true);
   const [pointsForm, setPointsForm] = useState({
     pontos: "",
@@ -69,6 +70,11 @@ export default function CustomerDetails() {
 
   if (!customer) return <div className="error">Cliente não encontrado</div>;
 
+  const purchaseProfile = customer.purchase_profile || {};
+  const purchases = transactions.filter((tx) => tx.tipo === "entrada" && tx.valor_compra != null);
+  const formatCurrency = (value) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const formatDateTime = (value) => value ? new Date(value).toLocaleString("pt-BR") : "-";
+
   return (
     <div className="customer-details">
       <div className="header">
@@ -79,6 +85,12 @@ export default function CustomerDetails() {
         </div>
       </div>
 
+      <div className="customer-tabs" role="tablist" aria-label="Seções do cliente">
+        <button type="button" className={activeTab === "perfil" ? "active" : ""} onClick={() => setActiveTab("perfil")}>Perfil</button>
+        <button type="button" className={activeTab === "historico" ? "active" : ""} onClick={() => setActiveTab("historico")}>Histórico de compras</button>
+      </div>
+
+      {activeTab === "perfil" && <>
       <div className="info-card">
         <h3>📋 Informações</h3>
         <p>
@@ -162,6 +174,34 @@ export default function CustomerDetails() {
         </form>
       </div>
 
+      </>}
+
+      {activeTab === "historico" && <>
+      <div className="purchase-summary">
+        <article><span>Total gasto</span><strong>{formatCurrency(purchaseProfile.total_gasto)}</strong></article>
+        <article><span>Compras registradas</span><strong>{purchaseProfile.total_compras || 0}</strong></article>
+        <article><span>Ticket médio</span><strong>{formatCurrency(purchaseProfile.ticket_medio)}</strong></article>
+        <article><span>Última compra</span><strong>{formatDateTime(purchaseProfile.ultima_compra)}</strong></article>
+        <article><span>Produto favorito</span><strong>{purchaseProfile.produto_favorito || "-"}</strong></article>
+      </div>
+
+      <div className="history-card">
+        <h3>Histórico de compras</h3>
+        {purchases.length === 0 ? <p className="empty">Nenhuma compra com valor registrada</p> : (
+          <div className="table-scroll"><table className="transactions-table">
+            <thead><tr><th>Data e hora</th><th>Produto</th><th>Valor</th><th>Pontos</th><th>Registrado por</th><th>Descrição</th></tr></thead>
+            <tbody>{purchases.map((tx) => <tr key={tx.id}>
+              <td>{formatDateTime(tx.created_at)}</td>
+              <td>{tx.product_nome || "-"}</td>
+              <td className="purchase-value">{formatCurrency(tx.valor_compra)}</td>
+              <td className="points entrada">+{tx.pontos}</td>
+              <td>{tx.usuario_nome || "-"}</td>
+              <td>{tx.descricao || tx.motivo || "-"}</td>
+            </tr>)}</tbody>
+          </table></div>
+        )}
+      </div>
+
       <div className="history-card">
         <h3>Produtos Consumidos</h3>
         {consumedProducts.length === 0 ? (
@@ -222,6 +262,7 @@ export default function CustomerDetails() {
           </table>
         )}
       </div>
+      </>}
     </div>
   );
 }
